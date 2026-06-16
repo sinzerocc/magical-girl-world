@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神秘界面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            /* 禁用双击放大缩放（特别是手机端），保证连续点击的流畅度 */
+            touch-action: manipulation; 
+            cursor: pointer;
+        }
+        /* 全屏图片样式 */
+        .bg-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none; /* 防止图片被拖拽 */
+            user-select: none;    /* 防止文字/图片被选中 */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 随机背景图片 -->
+    <img id="randomImg" class="bg-image" src="" alt="Background">
+
+    <!-- 背景音乐：把 src 换成你准备好的音乐文件名，比如 bgm.mp3 -->
+    <audio id="bgm" src="bgm.mp3" loop></audio>
+
+    <script>
+        // ==========================================
+        // 1. 配置你自己的图片文件名
+        // ==========================================
+        // 把你准备好的图片放到和这个 html 同一个文件夹下，并在下面写上文件名
+        const myImages = [
+            '1.jpg',
+            '2.jpg',
+            '3.jpg',
+            '4.jpg',
+            '5.jpg'
+        ];
+
+        // 随机挑选一张显示
+        if (myImages.length > 0) {
+            const randomIndex = Math.floor(Math.random() * myImages.length);
+            document.getElementById('randomImg').src = myImages[randomIndex];
+        }
+
+
+        // ==========================================
+        // 2. 核心交互：解禁音乐 + 5秒点8下跳转
+        // ==========================================
+        const audio = document.getElementById('bgm');
+        let clickTimestamps = []; // 记录点击时间戳的数组
+
+        document.addEventListener('click', function() {
+            // 【解决恶心限制】只要用户点第一下，就尝试播放音乐
+            if (audio.paused) {
+                audio.play().catch(err => {
+                    console.log("音频播放被拦截，等待下一次点击: ", err);
+                });
+            }
+
+            // 【连击算法】记录当前点击的时间
+            const now = Date.now();
+            clickTimestamps.push(now);
+
+            // 只保留 5 秒之内的点击记录（过滤掉很久以前的点击）
+            clickTimestamps = clickTimestamps.filter(time => now - time < 5000);
+
+            // 如果 5 秒内的点击次数达到了 8 次
+            if (clickTimestamps.length >= 8) {
+                // 大功告成，直接肉眼可见地跳转！
+                window.location.href = 'page2.html';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magical Girl World - Destiny</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #030307; font-family: "MS Mincho", "Heiti SC", serif; touch-action: manipulation; }
+        
+        /* 背景图 */
+        .bg-image { width: 100%; height: 100%; object-fit: cover; pointer-events: none; user-select: none; position: absolute; top: 0; left: 0; z-index: 1; filter: brightness(0.3) blur(2px); }
+        
+        .container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; display: flex; flex-direction: column; justify-content: space-around; align-items: center; padding: 30px 10px; }
+        
+        .title { color: #fff; font-size: 1.6rem; text-align: center; letter-spacing: 2px; text-shadow: 0 0 10px rgba(138, 43, 226, 0.8); user-select: none; pointer-events: none; line-height: 1.6; }
+        
+        /* 牌阵容器 */
+        .card-container { display: flex; gap: 25px; justify-content: center; align-items: center; width: 100%; max-width: 900px; height: 320px; }
+        
+        /* 塔罗牌 3D 舞台 */
+        .tarot-card { width: 170px; height: 290px; perspective: 1200px; cursor: pointer; transition: transform 0.6s, opacity 0.6s; }
+        
+        /* 3D 翻转核心容器 */
+        .card-inner { width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
+        
+        /* 绝对定位并隐藏背面物象 */
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.8); }
+        
+        /* 1. 曜金星象牌背 */
+        .card-back { 
+            background: radial-gradient(circle at center, #10192c 0%, #070b14 100%); 
+            border: 3px double #d4af37; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .card-back::before {
+            content: '';
+            position: absolute;
+            width: 130px;
+            height: 130px;
+            border: 1px dashed rgba(212, 175, 55, 0.3);
+            border-radius: 50%;
+            background: repeating-conic-gradient(from 0deg, transparent 0deg 15deg, rgba(212, 175, 55, 0.05) 15deg 30deg);
+        }
+        .card-back::after { 
+            content: '☾'; 
+            position: absolute; 
+            font-size: 2.5rem; 
+            color: #e5c158; 
+            text-shadow: 0 0 15px rgba(229, 193, 88, 0.6);
+        }
+
+        /* 2. 牌面（文字必须全死死锁在 card-front 内部，翻转前绝不可见） */
+        .card-front { 
+            background: linear-gradient(135deg, #1d152b 0%, #0e0a16 100%); 
+            border: 2px solid #8a2be2; 
+            transform: rotateY(180deg); /* 背对屏幕 */
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center;
+            padding: 20px;
+            color: #fff;
+            text-align: center;
+        }
+        .card-name { font-size: 1.1rem; color: #00ffff; margin-bottom: 15px; text-shadow: 0 0 5px #00ffff; font-weight: bold; }
+        .card-desc { font-size: 0.85rem; line-height: 1.6; color: #bbb; }
+
+        /* 动画控制状态机 */
+        .tarot-card.flipped .card-inner { transform: rotateY(180deg); }
+        .tarot-card.fade-out { opacity: 0; transform: scale(0.7); pointer-events: none; }
+        .tarot-card.center-focus { transform: scale(1.2); z-index: 99; pointer-events: none; }
+
+        /* 底部浮现的最终通关/轮回判词 */
+        .result-text { opacity: 0; color: #ff4a76; font-size: 1.15rem; text-align: center; max-width: 650px; transition: opacity 1s ease 0.8s; min-height: 60px; line-height: 1.6; text-shadow: 0 0 8px rgba(255,74,118,0.4); }
+        .result-text.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <img id="randomImg" class="bg-image" src="" alt="Destiny">
+
+    <div class="container">
+        <div class="title" id="guideTitle">
+            「 運命の選択 / The Choice of Destiny 」<br>
+            <span style="font-size: 1rem; color: #aaa; display: block; margin-top: 10px;">目を閉じて、心の雑音を聞きなさい。四つの選択肢から、あなたの終点を選べ。</span>
+            <span style="font-size: 0.85rem; color: #888; display: block;">Close your eyes. Choose your destination from the four choices.</span>
+        </div>
+
+        <div class="card-container" id="cardContainer">
+            <!-- 四张真正的盲盒卡牌 -->
+            <div class="tarot-card" onclick="drawCard(this, 0)">
+                <div class="card-inner">
+                    <div class="card-face card-back"></div>
+                    <div class="card-face card-front">
+                        <div class="card-name" id="name0"></div>
+                        <div class="card-desc" id="desc0"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="tarot-card" onclick="drawCard(this, 1)">
+                <div class="card-inner">
+                    <div class="card-face card-back"></div>
+                    <div class="card-face card-front">
+                        <div class="card-name" id="name1"></div>
+                        <div class="card-desc" id="desc1"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="tarot-card" onclick="drawCard(this, 2)">
+                <div class="card-inner">
+                    <div class="card-face card-back"></div>
+                    <div class="card-face card-front">
+                        <div class="card-name" id="name2"></div>
+                        <div class="card-desc" id="desc2"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="tarot-card" onclick="drawCard(this, 3)">
+                <div class="card-inner">
+                    <div class="card-face card-back"></div>
+                    <div class="card-face card-front">
+                        <div class="card-name" id="name3"></div>
+                        <div class="card-desc" id="desc3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 只有抽完卡才会浮现的命运判词 -->
+        <div class="result-text" id="resultText"></div>
+    </div>
+
+    <audio id="bgm3" src="./bgm3.mp3" loop></audio>
+
+    <script>
+        const myImages = ['./p31.jpg'];
+        document.getElementById('randomImg').src = myImages[Math.floor(Math.random() * myImages.length)];
+
+        const audio = document.getElementById('bgm3');
+        function tryPlayMusic() {
+            audio.play().then(() => document.removeEventListener('click', tryPlayMusic)).catch(err => {});
+        }
+        tryPlayMusic();
+        document.addEventListener('click', tryPlayMusic);
+
+        // 4张牌阵数据池
+        const tarotPool = [
+            { isTarget: true, name: "【 愚者 / THE FOOL 】", desc: "崖っぷちに立つ旅人。", conclusion: "「因果の糸が結ばれた。新世界への扉が開く…」\n(The threads of fate are tied. The door to the new world opens...)" },
+            { isTarget: false, name: "【 死神 / DEATH 】", desc: "終焉を告げる黒き影。", conclusion: "「それは間違った選択 da。輪回は終わらない…」\n(That was a wrong choice. The cycle never ends...)" },
+            { isTarget: false, name: "【 運命の輪 / WHEEL 】", desc: "逆回転を始めた歯車。", conclusion: "「時の針が巻き戻る。やり直すがいい…」\n(The clock hands rewind. Try it once more...)" },
+            { isTarget: false, name: "【 月 / THE MOON 】", desc: "混沌を照らす不吉な月光。", conclusion: "「幻影に惑わされたな。もう一度選びなさい…」\n(You were deceived by illusions. Choose again...)" }
+        ];
+
+        // 运行时完全随机洗牌
+        let shuffled = [...tarotPool].sort(() => Math.random() - 0.5);
+        for(let i=0; i<4; i++) {
+            document.getElementById(`name${i}`).innerText = shuffled[i].name;
+            document.getElementById(`desc${i}`).innerText = shuffled[i].desc;
+        }
+
+        let hasDrawn = false;
+        function drawCard(clickedCard, index) {
+            if (hasDrawn) return;
+            hasDrawn = true;
+
+            const cards = document.querySelectorAll('.tarot-card');
+            cards.forEach((card) => {
+                if (card === clickedCard) {
+                    // 被点击的卡牌原位翻转并放大
+                    card.classList.add('center-focus', 'flipped');
+                } else {
+                    // 未被点击的其他卡牌淡出隐藏
+                    card.classList.add('fade-out');
+                }
+            });
+
+            document.getElementById('guideTitle').innerHTML = "「 啓示 / THE REVELATION 」";
+            const resultBox = document.getElementById('resultText');
+            resultBox.innerText = shuffled[index].conclusion;
+            resultBox.classList.add('show');
+
+            // 依据是否抽中【愚者】执行自动化分支
+            if (shuffled[index].isTarget) {
+                setTimeout(() => {
+                    window.location.href = 'page4.html';
+                }, 4000);
+            } else {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 4000);
+            }
+        }
+    </script>
+</body>
+</html>
