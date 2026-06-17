@@ -36,7 +36,7 @@
             /* 3.5秒丝滑过渡，模拟黎明破晓的平缓质感 */
             transition: opacity 2s ease-in-out, transform 3.5s cubic-bezier(0.33, 1, 0.68, 1);
         }
-        
+         
         /* 圣光如太阳般升起扩散 */
         .holy-light-overlay.ascend {
             opacity: 1;
@@ -51,24 +51,24 @@
             top: 50%; left: 50%; 
             transform: translate(-50%, -40%) scale(0.95); /* 绝对居中定位基准 */
             z-index: 11;
-            
+             
             /* 白金至亮金高贵渐变字 */
             background: linear-gradient(to bottom, #ffffff 0%, #ffe89e 40%, #d4af37 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            
+             
             font-size: 2.2rem; font-weight: 900; letter-spacing: 8px; text-align: center; line-height: 1.8;
             opacity: 0;
             /* 伴随太阳升起，文字慢半拍优雅浮现 */
             transition: opacity 1.2s ease-in-out 0.8s, transform 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.8s;
             pointer-events: none;
-            
+             
             /* 核心黑魔法：多层重度纯黑阴影嵌套，形成天然高反差轮廓，背景再亮也绝对清晰 */
             filter: drop-shadow(0 0 3px #000000) 
                     drop-shadow(0 2px 8px rgba(0, 0, 0, 0.9)) 
                     drop-shadow(0 4px 20px rgba(0, 0, 0, 0.9));
         }
-        
+         
         /* 圣光正中央文字显现 */
         .congrats-text.show {
             opacity: 1; 
@@ -76,7 +76,7 @@
         }
 
         @keyframes textPulse { 0% { transform: scale(0.99); filter: hue-rotate(0deg); } 100% { transform: scale(1.01); filter: hue-rotate(15deg); } }
-        
+         
         /* 原UI解体淡出稍微拉长，配合太阳升起的节奏 */
         .shatter-ui { opacity: 0 !important; transform: scale(1.02) translateY(-10px) !important; pointer-events: none !important; }
     </style>
@@ -84,7 +84,7 @@
 <body>
 
     <div id="holyLight" class="holy-light-overlay"></div>
-    
+     
     <div id="congratsText" class="congrats-text">
         おめでとう。<br>
         <span style="font-size: 1.4rem; letter-spacing: 4px; font-weight: 700;">Congratulations.</span>
@@ -103,7 +103,7 @@
         </div>
 
         <div id="puzzleBox" class="puzzle-box">
-            <div class="question">最も愛している人は誰ですか？<br><span style="font-size: 0.8rem; color: #aaa;">Who is the person the author loves the most?</span></div>
+            <div class="question">最も愛している人は谁ですか？<br><span style="font-size: 0.8rem; color: #aaa;">Who is the person the author loves the most?</span></div>
             <input type="text" id="secretInput" class="secret-input" autocomplete="off" placeholder="......">
         </div>
     </div>
@@ -134,35 +134,51 @@
             secretInput.focus();
         }, 3000);
 
-        // 4. 输入 yip 触发“太阳加冕”仪式
+        // ==========================================
+        // ☀️ 核心封装：触发“太阳加冕”仪式的通用函数
+        // ==========================================
+        function triggerAscension() {
+            // 如果已经启动过传送（防止input和39秒定时器同时触发），则直接返回
+            if (sessionStorage.getItem('gate_key') === 'stage3') return;
+
+            if (document.activeElement === secretInput) {
+                secretInput.blur();
+            }
+            
+            // 1. 启动平缓的太阳升起特效
+            document.getElementById('holyLight').classList.add('ascend');
+            
+            // 2. 伴随日出，旧界面优雅地淡化隐去
+            document.getElementById('mainContainer').classList.add('shatter-ui');
+            document.getElementById('randomImg').style.filter = "brightness(0.9) contrast(1.1) blur(15px)";
+            
+            // 3. 0.8秒后，文字在太阳中心带着完美的重黑轮廓线，破晓而出！
+            document.getElementById('congratsText').classList.add('show');
+
+            // 成功：升级凭证
+            sessionStorage.setItem('gate_key', 'stage3');
+            
+            // 4. 配合 3.5秒 的漫长宏大日出效果，3.8秒后执行传送
+            setTimeout(() => {
+                window.location.href = 'page3.html';
+            }, 3800);
+        }
+
+        // 4. 输入 yip 触发
         secretInput.addEventListener('input', function() {
             const inputValue = secretInput.value.trim().toLowerCase();
             if (inputValue === 'yip') {
-                secretInput.blur();
-                
-                // ==========================================
-                // ☀️ 史诗级太阳仪式启动
-                // ==========================================
-                
-                // 1. 启动平缓的太阳升起特效
-                document.getElementById('holyLight').classList.add('ascend');
-                
-                // 2. 伴随日出，旧界面优雅地淡化隐去
-                document.getElementById('mainContainer').classList.add('shatter-ui');
-                document.getElementById('randomImg').style.filter = "brightness(0.9) contrast(1.1) blur(15px)";
-                
-                // 3. 0.8秒后，文字在太阳中心带着完美的重黑轮廓线，破晓而出！
-                document.getElementById('congratsText').classList.add('show');
-
-                // 成功：升级凭证
-                sessionStorage.setItem('gate_key', 'stage3');
-                
-                // 4. 配合 3.5秒 的漫长宏大日出效果，3.8秒后执行传送
-                setTimeout(() => {
-                    window.location.href = 'page3.html';
-                }, 3800);
+                triggerAscension();
             }
         });
+
+        // ==========================================
+        // ⏳ 5. 新增机制：在P2静默停留 39 秒直接飞升 P3
+        // ==========================================
+        // 39秒 = 39 * 1000 = 39000 毫秒
+        setTimeout(() => {
+            triggerAscension();
+        }, 39000);
     </script>
 </body>
 </html>
