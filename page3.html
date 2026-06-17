@@ -162,7 +162,7 @@
         let canDraw = false; 
         let hasDrawn = false; 
 
-        // 🎯 限制：开始3秒不能选择任何牌（3000ms 后才激活 ready 状态）
+        // 🎯 限制：开始3秒不能选择任何牌（50ms 后才激活 ready 状态）
         setTimeout(() => {
             canDraw = true; 
             const cards = document.querySelectorAll('.tarot-card');
