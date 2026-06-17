@@ -62,7 +62,7 @@
             "原来，命中注定的人，从一开始就不存在啊。",
             "ERROR: 魔法回路产生严重排异。第13个因果观测点处于溃灭边缘。",
             "万物归于太一（The 1）。始源即是终点，虚空将在唯一的凝视中收缩。 // MATRIX_FACTOR_1",
-            "不要在此寻找凡尘的输入框。依循隐现的九宫矩阵，一笔划下解开维度的因果线。",
+            "可在虚空中直接敲击因果数字，亦可依循隐现的九宫矩阵一笔划下线段。",
             "循环了1402次，根本没有第五页，迷失在此的人，请放弃挣扎吧。"
         ];
 
@@ -71,6 +71,7 @@
             if (!logTerminal.classList.contains('surfaced')) return;
             const text = database[Math.floor(Math.random() * database.length)];
             const line = document.createElement('div');
+            document.body.focus(); // 自动让页面捕获键盘焦点
             line.className = 'log-line';
             const h = String(Math.floor(Math.random() * 24)).padStart(2, '0');
             const m = String(Math.floor(Math.random() * 60)).padStart(2, '0');
@@ -108,6 +109,12 @@
             return null;
         }
 
+        // 成功通关跳转逻辑
+        function unlockSingularity() {
+            sessionStorage.setItem('gate_key', 'sudoku_trial');
+            window.location.href = 'sudoku.html';
+        }
+
         function startTrack(x, y) {
             if (sessionStorage.getItem('gate_key') === 'sudoku_trial') return;
             isDrawing = true; userPath = [];
@@ -130,11 +137,8 @@
             if (!isDrawing) return;
             isDrawing = false;
             const pathStr = userPath.join('');
-            
-            // 💡 模糊顺序判定：只要滑动路径中依次存在过 4、2、1 区域，即可在手机上轻松通过
             if (/4.*2.*1/.test(pathStr)) {
-                sessionStorage.setItem('gate_key', 'sudoku_trial');
-                window.location.href = 'sudoku.html';
+                unlockSingularity();
             }
             userPath = [];
         }
@@ -145,6 +149,29 @@
         window.addEventListener('touchstart', (e) => { const t = e.touches[0]; startTrack(t.clientX, t.clientY); });
         window.addEventListener('touchmove', (e) => { const t = e.touches[0]; moveTrack(t.clientX, t.clientY); });
         window.addEventListener('touchend', endTrack);
+
+        // ==========================================
+        // ⌨️ 新增：电脑端键盘数字键监听（输入 421 即可破局）
+        // ==========================================
+        let keyboardInputSequence = "";
+        window.addEventListener('keydown', (e) => {
+            if (sessionStorage.getItem('gate_key') === 'sudoku_trial') return;
+            
+            // 兼容大键盘和数字小键盘
+            if (/[1-9]/.test(e.key)) {
+                keyboardInputSequence += e.key;
+                
+                // 仅保留最后 3 个输入的数字字符，防止过长
+                if (keyboardInputSequence.length > 3) {
+                    keyboardInputSequence = keyboardInputSequence.slice(-3);
+                }
+                
+                // 判断是否连续敲击了 4, 2, 1
+                if (keyboardInputSequence === "421") {
+                    unlockSingularity();
+                }
+            }
+        });
 
         function loop() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.08)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
