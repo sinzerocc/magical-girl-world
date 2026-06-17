@@ -14,30 +14,16 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: "Courier New", monospace; touch-action: none; }
-        
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; filter: opacity(0.25); }
-
-        .container { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
-            pointer-events: none; 
-        }
-
+        .container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; pointer-events: none; }
         .void-message { text-align: center; font-size: 1.2rem; line-height: 2.2; letter-spacing: 3px; color: #ff0055; text-shadow: 0 0 10px #ff0055; animation: glitch 1.5s infinite alternate ease-in-out; }
         .sub-message { margin-top: 15px; color: #00ffff; text-shadow: 0 0 10px #00ffff; font-size: 0.9rem; }
         .stay-tuned { margin-top: 25px; font-size: 1.1rem; font-weight: bold; color: #ffffff; letter-spacing: 6px; text-shadow: 0 0 8px #00ffff; }
-
-        .log-terminal {
-            margin-top: 35px; width: 100%; max-width: 600px; height: 0; opacity: 0;
-            background: rgba(3, 8, 15, 0.92); border: 1px solid rgba(0, 255, 255, 0);
-            border-radius: 6px; padding: 0 12px; font-family: 'Courier New', 'MS Mincho', monospace;
-            transition: height 2.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 2s ease-out, border-color 2.5s ease;
-        }
+        .log-terminal { margin-top: 35px; width: 100%; max-width: 600px; height: 0; opacity: 0; background: rgba(3, 8, 15, 0.92); border: 1px solid rgba(0, 255, 255, 0); border-radius: 6px; padding: 0 12px; font-family: 'Courier New', 'MS Mincho', monospace; transition: height 2.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 2s ease-out, border-color 2.5s ease; }
         .log-terminal.surfaced { height: 190px; opacity: 1; padding: 12px; border: 1px solid rgba(0, 255, 255, 0.15); }
         .system-status { color: #00ffff; font-size: 0.75rem; border-bottom: 1px dashed rgba(0, 255, 255, 0.15); padding-bottom: 6px; margin-bottom: 8px; }
         .log-stream { height: 135px; overflow-y: hidden; display: flex; flex-direction: column; gap: 6px; }
         .log-line { font-size: 0.7rem; line-height: 1.5; color: rgba(0, 210, 255, 0.45); letter-spacing: 1px; }
-
         @keyframes glitch { 0%, 90%, 100% { transform: skewX(0deg); } 93% { transform: skewX(3deg); } 95% { transform: skewX(-1deg); } }
     </style>
 </head>
@@ -52,14 +38,13 @@
             <div class="sub-message">[ 因果の海がすべてを洗流す。 ]</div>
             <div class="stay-tuned">「 乞うご期待。 」</div>
         </div>
-
         <div class="log-terminal" id="logTerminal">
             <div class="system-status">[ETHER_NET]: OCCULT_RESONANCE // 正在检索沉淀的意识残渣...</div>
             <div class="log-stream" id="logStream"></div>
         </div>
     </div>
 
-    <audio id="voidBgm" src="./Yuki Kajiura Official.mp3" loop></audio>
+    <audio id="voidBgm" src="./bgm4.mp3" loop></audio>
 
     <script>
         const audio = document.getElementById('voidBgm');
@@ -67,14 +52,8 @@
         tryMusic(); document.addEventListener('click', tryMusic);
 
         const logTerminal = document.getElementById('logTerminal');
-        setTimeout(() => {
-            logTerminal.classList.add('surfaced');
-            setTimeout(appendLog, 600);
-        }, 4000); 
+        setTimeout(() => { logTerminal.classList.add('surfaced'); setTimeout(appendLog, 600); }, 4000); 
 
-        // ==========================================
-        // 🧩 1. 虚空日志流
-        // ==========================================
         const database = [
             "SYS_ECHO: 翠玉录协议已载入。如其在上，如其在下。",
             "揭开羔羊的封印，见有4匹马自虚空跃出，其色为主宰者的审判。 // MATRIX_FACTOR_4",
@@ -103,9 +82,6 @@
             setTimeout(appendLog, Math.random() * 2500 + 2000);
         }
 
-        // ==========================================
-        // 🌌 2. Canvas 核心控制：代码雨 + 呼吸九宫格 + 滑行拦截
-        // ==========================================
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const katakana = "ΞΔΦΨΩ0123456789†‡☠★🔮★☠‡†".split("");
@@ -119,92 +95,59 @@
         }
         window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
-        // 3秒周期的呼吸网格逻辑
-        let gridAlpha = 0;
-        let gridTimer = 0;
-
-        // 滑行轨迹捕获变量
-        let isDrawing = false;
-        let userPath = []; // 存储滑过的小键盘数字序列，例如 [4, 2, 1]
-        let lastGridNum = null;
+        let gridAlpha = 0; let gridTimer = 0;
+        let isDrawing = false; let userPath = []; let lastGridNum = null;
         let currentMousePos = { x: 0, y: 0 };
 
-        // 计算当前触点属于九宫格的哪一个数字 (标准小键盘布局)
         function getGridNumber(x, y) {
-            const w = canvas.width / 3;
-            const h = canvas.height / 3;
-            const col = Math.floor(x / w); // 0, 1, 2
-            const row = Math.floor(y / h); // 0, 1, 2
-            
-            // 映射到数字小键盘
-            // 行0 (上方): 7, 8, 9
-            // 行1 (中央): 4, 5, 6
-            // 行2 (下方): 1, 2, 3
+            const w = canvas.width / 3; const h = canvas.height / 3;
+            const col = Math.floor(x / w); const row = Math.floor(y / h);
             if (row === 0) return [7, 8, 9][col];
             if (row === 1) return [4, 5, 6][col];
             if (row === 2) return [1, 2, 3][col];
             return null;
         }
 
-        // 滑动事件开始
         function startTrack(x, y) {
             if (sessionStorage.getItem('gate_key') === 'sudoku_trial') return;
-            isDrawing = true;
-            userPath = [];
+            isDrawing = true; userPath = [];
             lastGridNum = getGridNumber(x, y);
             if (lastGridNum) userPath.push(lastGridNum);
             currentMousePos = { x, y };
         }
 
-        // 滑动中进行碰撞检测
         function moveTrack(x, y) {
             if (!isDrawing) return;
             currentMousePos = { x, y };
             const currentNum = getGridNumber(x, y);
-            
-            // 如果滑入了新的格子，且跟上一个格子不同
             if (currentNum && currentNum !== lastGridNum) {
                 lastGridNum = currentNum;
-                // 只有当这个数字没有在当前连续滑行中被记录过，才塞入队列
-                if (userPath[userPath.length - 1] !== currentNum) {
-                    userPath.push(currentNum);
-                }
+                if (userPath[userPath.length - 1] !== currentNum) { userPath.push(currentNum); }
             }
         }
 
-        // 滑动结束判定因果密码
         function endTrack() {
             if (!isDrawing) return;
             isDrawing = false;
-            
-            // 过滤重复和无效滑动后，检查最后阶段是否形成了完美的 [4, 2, 1] 轨迹
-            // 允许滑过其他多余数字，但最后核心必须精准包含或匹配 4->2->1 的顺序
             const pathStr = userPath.join('');
-            if (pathStr.includes('421')) {
-                // 彻底激活！通往数独
+            
+            // 💡 【核心修改】：放宽精准度！使用正则模糊匹配。只要包含 4.*2.*1 序列即视为成功！
+            if (/4.*2.*1/.test(pathStr)) {
                 sessionStorage.setItem('gate_key', 'sudoku_trial');
                 window.location.href = 'sudoku.html';
             }
             userPath = [];
         }
 
-        // 绑定触屏与鼠标
         window.addEventListener('mousedown', (e) => startTrack(e.clientX, e.clientY));
         window.addEventListener('mousemove', (e) => moveTrack(e.clientX, e.clientY));
         window.addEventListener('mouseup', endTrack);
-
         window.addEventListener('touchstart', (e) => { const t = e.touches[0]; startTrack(t.clientX, t.clientY); });
         window.addEventListener('touchmove', (e) => { const t = e.touches[0]; moveTrack(t.clientX, t.clientY); });
         window.addEventListener('touchend', endTrack);
 
-        // ==========================================
-        // 🌊 3. 混合主渲染循环
-        // ==========================================
         function loop() {
-            // 背景淡化半透明，留住代码雨拖尾
             ctx.fillStyle = 'rgba(0, 0, 0, 0.08)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // A. 绘制经典红黑代码雨
             ctx.fillStyle = '#ff0055'; ctx.font = fontSize + 'px monospace';
             for (let i = 0; i < columns; i++) {
                 const text = katakana[Math.floor(Math.random() * katakana.length)];
@@ -213,38 +156,23 @@
                 rainDrops[i]++;
             }
 
-            // B. 3秒周期的因果九宫格暗纹缓缓浮现、隐去
             gridTimer += 0.02;
-            // 使用正弦函数让它每3秒呼吸一次（从完全透明到微弱幽蓝）
             gridAlpha = Math.max(0, Math.sin(gridTimer) * 0.08); 
-
-            const w = canvas.width / 3;
-            const h = canvas.height / 3;
-
-            ctx.strokeStyle = `rgba(0, 255, 255, ${gridAlpha})`;
-            ctx.lineWidth = 1;
-            
-            // 画两纵两横的划线
+            const w = canvas.width / 3; const h = canvas.height / 3;
+            ctx.strokeStyle = `rgba(0, 255, 255, ${gridAlpha})`; ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.moveTo(w, 0); ctx.lineTo(w, canvas.height);
-            ctx.moveTo(w * 2, 0); ctx.lineTo(w * 2, canvas.height);
-            ctx.moveTo(0, h); ctx.lineTo(canvas.width, h);
-            ctx.moveTo(0, h * 2); ctx.lineTo(canvas.width, h * 2);
+            ctx.moveTo(w, 0); ctx.lineTo(w, canvas.height); ctx.moveTo(w * 2, 0); ctx.lineTo(w * 2, canvas.height);
+            ctx.moveTo(0, h); ctx.lineTo(canvas.width, h); ctx.moveTo(0, h * 2); ctx.lineTo(canvas.width, h * 2);
             ctx.stroke();
 
-            // C. 如果玩家正在滑动，实时绘制他拖出的幽蓝色轨迹光束
             if (isDrawing && userPath.length > 0) {
-                ctx.strokeStyle = 'rgba(0, 255, 255, 0.6)';
-                ctx.lineWidth = 3;
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.6)'; ctx.lineWidth = 3;
                 ctx.shadowBlur = 10; ctx.shadowColor = '#00ffff';
                 ctx.beginPath();
-                
-                // 可以在这里加特效，让被滑过的小九宫格中心亮起微光
                 ctx.arc(currentMousePos.x, currentMousePos.y, 4, 0, Math.PI * 2);
                 ctx.fillStyle = '#00ffff'; ctx.fill();
             }
-            ctx.shadowBlur = 0; // 重置光晕
-            
+            ctx.shadowBlur = 0;
             requestAnimationFrame(loop);
         }
         requestAnimationFrame(loop);
