@@ -18,6 +18,7 @@
             /* 禁用双击放大缩放（特别是手机端），保证连续点击的流畅度 */
             touch-action: manipulation; 
             cursor: pointer;
+            font-family: "Hiragino Mincho ProN", "MS Mincho", serif;
         }
         /* 全屏图片样式 */
         .bg-image {
@@ -27,9 +28,64 @@
             pointer-events: none; /* 防止图片被拖拽 */
             user-select: none;    /* 防止文字/图片被选中 */
         }
+
+        /* ==================== 🔐 登录注册系统专属样式 (暗色科技风) ==================== */
+        .auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(11, 13, 19, 0.98); /* 遮挡下方图片 */
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9999; /* 保证在最上层 */
+            transition: opacity 0.5s ease;
+        }
+        
+        .auth-container {
+            width: 90%; max-width: 400px; background: #10141d; padding: 30px;
+            border: 1px solid rgba(139, 162, 196, 0.2); border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7); text-align: center;
+        }
+        .auth-container h2 { color: #6495ed; margin-bottom: 20px; letter-spacing: 2px; font-size: 1.4rem; }
+        
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-size: 0.85rem; color: rgba(230, 235, 245, 0.6); margin-bottom: 5px; }
+        .input-group input {
+            width: 100%; padding: 12px; background: rgba(20, 26, 38, 0.8);
+            border: 1px solid rgba(100, 149, 237, 0.3); border-radius: 4px;
+            color: #fff; font-size: 0.9rem; outline: none; -webkit-user-select: text; user-select: text;
+        }
+        .input-group input:focus { border-color: #6495ed; }
+        
+        .auth-btn {
+            width: 100%; padding: 12px; background: rgba(100, 149, 237, 0.15);
+            border: 1px solid #6495ed; color: #fff; border-radius: 4px;
+            cursor: pointer; font-size: 0.9rem; margin-top: 10px; transition: all 0.3s;
+        }
+        .auth-btn:hover { background: rgba(100, 149, 237, 0.3); transform: scale(1.01); }
+        
+        .switch-mode { font-size: 0.8rem; margin-top: 15px; color: rgba(230, 235, 245, 0.5); cursor: pointer; text-decoration: underline; }
+        .switch-mode:hover { color: #6495ed; }
+        .auth-msg { font-size: 0.85rem; color: #ff6b6b; margin-top: 10px; min-height: 20px; }
     </style>
 </head>
 <body>
+
+    <div class="auth-overlay" id="authOverlay">
+        <div class="auth-container" onclick="event.stopPropagation();">
+            <h2 id="authTitle">観測点 - ログイン</h2>
+            
+            <div class="input-group">
+                <label>账号 / Username</label>
+                <input type="text" id="username" placeholder="请输入您的账号...">
+            </div>
+            <div class="input-group">
+                <label>密码 / Password</label>
+                <input type="password" id="password" placeholder="请输入您的密码...">
+            </div>
+            
+            <button class="auth-btn" id="submitBtn" onclick="handleAuth()">登 录</button>
+            <div class="switch-mode" id="toggleMode" onclick="toggleMode()">没有账号？去注册</div>
+            <div class="auth-msg" id="errorMsg"></div>
+        </div>
+    </div>
 
     <img id="randomImg" class="bg-image" src="" alt="Background">
 
@@ -53,14 +109,93 @@
             document.getElementById('randomImg').src = myImages[randomIndex];
         }
 
+        // ==========================================
+        // 🔐 2. 登录注册控制核心逻辑
+        // ==========================================
+        let isLoginMode = true;
+        let isUserAuthenticated = false; // 标记用户是否登录成功以开启后续游戏计时与点击机制
+
+        function toggleMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('authTitle').innerText = isLoginMode ? "観測点 - ログイン" : "観測点 - アカウント登録";
+            document.getElementById('submitBtn').innerText = isLoginMode ? "登 录" : "注 册";
+            document.getElementById('toggleMode').innerText = isLoginMode ? "没有账号？去注册" : "已有账号？去登录";
+            document.getElementById('errorMsg').innerText = "";
+        }
+
+        function handleAuth() {
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            const msgDom = document.getElementById('errorMsg');
+            
+            if(!user || !pass) {
+                msgDom.style.color = "#ff6b6b";
+                msgDom.innerText = "账号或密码不能为空。";
+                return;
+            }
+
+            let userDb = JSON.parse(localStorage.getItem('game_users_db')) || {};
+
+            if (!isLoginMode) {
+                // 【注册模式】
+                if (userDb[user]) {
+                    msgDom.style.color = "#ff6b6b";
+                    msgDom.innerText = "该账号已被注册。";
+                } else {
+                    userDb[user] = {
+                        password: pass,
+                        stage: 'stage2', 
+                        gate_key: 'none'  
+                    };
+                    localStorage.setItem('game_users_db', JSON.stringify(userDb));
+                    msgDom.style.color = "#2ecc71";
+                    msgDom.innerText = "注册成功！正在切换至登录...";
+                    setTimeout(() => { toggleMode(); }, 1200);
+                }
+            } else {
+                // 【登录模式】
+                if (userDb[user] && userDb[user].password === pass) {
+                    // 全局会话中记录当前是谁在玩
+                    sessionStorage.setItem('current_logged_user', user);
+                    
+                    // 智能进度检测：如果已经拿到了最深处的钥匙，直接跳转剧情页
+                    if (userDb[user].gate_key === 'stage_next_authorized') {
+                        sessionStorage.setItem('gate_key', 'stage_next_authorized');
+                        msgDom.style.color = "#2ecc71";
+                        msgDom.innerText = "检测到已有通关记录，正在破开虚空...";
+                        setTimeout(() => { 
+                            window.location.href = 'next_stage.html'; 
+                        }, 1000);
+                    } else {
+                        // 正常解禁主界面，进入点击和挂机判断
+                        msgDom.style.color = "#2ecc71";
+                        msgDom.innerText = "同步成功，正在载入世界...";
+                        setTimeout(() => { 
+                            document.getElementById('authOverlay').style.opacity = '0';
+                            setTimeout(() => {
+                                document.getElementById('authOverlay').style.display = 'none';
+                                isUserAuthenticated = true; // 允许点击和音乐机制生效
+                                startAdfTimer(); // 开启 3 分钟挂机定时器
+                            }, 500);
+                        }, 1000);
+                    }
+                } else {
+                    msgDom.style.color = "#ff6b6b";
+                    msgDom.innerText = "账号或密码错误。";
+                }
+            }
+        }
 
         // ==========================================
-        // 2. 核心交互：解禁音乐 + 5秒点8下跳转
+        // 🕹️ 3. 核心交互：解禁音乐 + 5秒点8下跳转
         // ==========================================
         const audio = document.getElementById('bgm');
-        let clickTimestamps = []; // 记录点击时间戳的数组
+        let clickTimestamps = []; 
 
         document.addEventListener('click', function() {
+            // 如果用户还没登录，点击空白处不触发游戏逻辑
+            if (!isUserAuthenticated) return;
+
             // 【解决恶心限制】只要用户点第一下，就尝试播放音乐
             if (audio.paused) {
                 audio.play().catch(err => {
@@ -72,28 +207,28 @@
             const now = Date.now();
             clickTimestamps.push(now);
 
-            // 只保留 5 秒之内的点击记录（过滤掉很久以前的点击）
+            // 只保留 5 秒之内的点击记录
             clickTimestamps = clickTimestamps.filter(time => now - time < 5000);
 
             // 如果 5 秒内的点击次数达到了 8 次
             if (clickTimestamps.length >= 8) {
-                // 大功告成，悄悄埋下进入第二关的命运凭证，然后跳转！
                 sessionStorage.setItem('gate_key', 'stage2');
                 window.location.href = 'page2.html';
             }
         });
 
         // ==========================================
-        // ⏳ 3. 新增隐藏机制：静止停留 3 分钟自动飞升
+        // ⏳ 4. 隐藏机制：静止停留 3 分钟自动飞升
         // ==========================================
-        // 3分钟 = 3 * 60 * 1000 = 180000 毫秒
-        setTimeout(() => {
-            // 检查一下，如果玩家已经在 3 分钟内靠手速提前过关了，就不重复执行
-            if (sessionStorage.getItem('gate_key') !== 'stage2') {
-                sessionStorage.setItem('gate_key', 'stage2');
-                window.location.href = 'page2.html';
-            }
-        }, 180000);
+        function startAdfTimer() {
+            setTimeout(() => {
+                // 只有当用户没有在5秒内提前通关时才自动跳转
+                if (sessionStorage.getItem('gate_key') !== 'stage2') {
+                    sessionStorage.setItem('gate_key', 'stage2');
+                    window.location.href = 'page2.html';
+                }
+            }, 180000); // 3分钟后生效
+        }
     </script>
 </body>
 </html>
