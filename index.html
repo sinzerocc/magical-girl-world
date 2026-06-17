@@ -29,7 +29,7 @@
             user-select: none;    /* 防止文字/图片被选中 */
         }
 
-        /* ==================== 🔐 登录注册系统专属样式 (暗色科技风) ==================== */
+        /* ==================== 🔐 登录系统专属样式 (暗色科技风) ==================== */
         .auth-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(11, 13, 19, 0.98); /* 遮挡下方图片 */
@@ -61,9 +61,7 @@
         }
         .auth-btn:hover { background: rgba(100, 149, 237, 0.3); transform: scale(1.01); }
         
-        .switch-mode { font-size: 0.8rem; margin-top: 15px; color: rgba(230, 235, 245, 0.5); cursor: pointer; text-decoration: underline; }
-        .switch-mode:hover { color: #6495ed; }
-        .auth-msg { font-size: 0.85rem; color: #ff6b6b; margin-top: 10px; min-height: 20px; }
+        .auth-msg { font-size: 0.85rem; color: #ff6b6b; margin-top: 15px; min-height: 20px; }
     </style>
 </head>
 <body>
@@ -82,7 +80,6 @@
             </div>
             
             <button class="auth-btn" id="submitBtn" onclick="handleAuth()">登 录</button>
-            <div class="switch-mode" id="toggleMode" onclick="toggleMode()">没有账号？去注册</div>
             <div class="auth-msg" id="errorMsg"></div>
         </div>
     </div>
@@ -110,18 +107,9 @@
         }
 
         // ==========================================
-        // 🔐 2. 登录注册控制核心逻辑
+        // 🔐 2. 登录控制核心逻辑（去除了注册机制）
         // ==========================================
-        let isLoginMode = true;
         let isUserAuthenticated = false; // 标记用户是否登录成功以开启后续游戏计时与点击机制
-
-        function toggleMode() {
-            isLoginMode = !isLoginMode;
-            document.getElementById('authTitle').innerText = isLoginMode ? "観測点 - ログイン" : "観測点 - アカウント登録";
-            document.getElementById('submitBtn').innerText = isLoginMode ? "登 录" : "注 册";
-            document.getElementById('toggleMode').innerText = isLoginMode ? "没有账号？去注册" : "已有账号？去登录";
-            document.getElementById('errorMsg').innerText = "";
-        }
 
         function handleAuth() {
             const user = document.getElementById('username').value.trim();
@@ -134,56 +122,20 @@
                 return;
             }
 
-            let userDb = JSON.parse(localStorage.getItem('game_users_db')) || {};
-
-            if (!isLoginMode) {
-                // 【注册模式】
-                if (userDb[user]) {
-                    msgDom.style.color = "#ff6b6b";
-                    msgDom.innerText = "该账号已被注册。";
-                } else {
-                    userDb[user] = {
-                        password: pass,
-                        stage: 'stage2', 
-                        gate_key: 'none'  
-                    };
-                    localStorage.setItem('game_users_db', JSON.stringify(userDb));
-                    msgDom.style.color = "#2ecc71";
-                    msgDom.innerText = "注册成功！正在切换至登录...";
-                    setTimeout(() => { toggleMode(); }, 1200);
-                }
-            } else {
-                // 【登录模式】
-                if (userDb[user] && userDb[user].password === pass) {
-                    // 全局会话中记录当前是谁在玩
-                    sessionStorage.setItem('current_logged_user', user);
-                    
-                    // 智能进度检测：如果已经拿到了最深处的钥匙，直接跳转剧情页
-                    if (userDb[user].gate_key === 'stage_next_authorized') {
-                        sessionStorage.setItem('gate_key', 'stage_next_authorized');
-                        msgDom.style.color = "#2ecc71";
-                        msgDom.innerText = "检测到已有通关记录，正在破开虚空...";
-                        setTimeout(() => { 
-                            window.location.href = 'next_stage.html'; 
-                        }, 1000);
-                    } else {
-                        // 正常解禁主界面，进入点击和挂机判断
-                        msgDom.style.color = "#2ecc71";
-                        msgDom.innerText = "同步成功，正在载入世界...";
-                        setTimeout(() => { 
-                            document.getElementById('authOverlay').style.opacity = '0';
-                            setTimeout(() => {
-                                document.getElementById('authOverlay').style.display = 'none';
-                                isUserAuthenticated = true; // 允许点击和音乐机制生效
-                                startAdfTimer(); // 开启 3 分钟挂机定时器
-                            }, 500);
-                        }, 1000);
-                    }
-                } else {
-                    msgDom.style.color = "#ff6b6b";
-                    msgDom.innerText = "账号或密码错误。";
-                }
-            }
+            // 记录当前登录用户到 Session 
+            sessionStorage.setItem('current_logged_user', user);
+            
+            // 正常解禁主界面，进入点击和挂机判断
+            msgDom.style.color = "#2ecc71";
+            msgDom.innerText = "同步成功，正在载入世界...";
+            setTimeout(() => { 
+                document.getElementById('authOverlay').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('authOverlay').style.display = 'none';
+                    isUserAuthenticated = true; // 允许点击和音乐机制生效
+                    startAdfTimer(); // 开启 3 分钟挂机定时器
+                }, 500);
+            }, 1000);
         }
 
         // ==========================================
@@ -196,7 +148,7 @@
             // 如果用户还没登录，点击空白处不触发游戏逻辑
             if (!isUserAuthenticated) return;
 
-            // 【解决恶心限制】只要用户点第一下，就尝试播放音乐
+            // 只要用户点第一下，就尝试播放音乐
             if (audio.paused) {
                 audio.play().catch(err => {
                     console.log("音频播放被拦截，等待下一次点击: ", err);
