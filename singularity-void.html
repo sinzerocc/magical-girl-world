@@ -33,7 +33,7 @@
 
     <div class="container">
         <div class="void-message">
-            「 特異点の虚空へようこそ。 」<br>
+            「 特异点的虚空へようこそ。 」<br>
             Welcome to the Singularity Void.<br>
             <div class="sub-message">[ 因果の海がすべてを洗流す。 ]</div>
             <div class="stay-tuned">「 乞うご期待。 」</div>
@@ -44,7 +44,7 @@
         </div>
     </div>
 
-    <audio id="voidBgm" src="./bgm4.mp3" loop></audio>
+    <audio id="voidBgm" src="./Yuki Kajiura Official.mp3" loop></audio>
 
     <script>
         const audio = document.getElementById('voidBgm');
@@ -131,7 +131,7 @@
             isDrawing = false;
             const pathStr = userPath.join('');
             
-            // 💡 【核心修改】：放宽精准度！使用正则模糊匹配。只要包含 4.*2.*1 序列即视为成功！
+            // 💡 模糊顺序判定：只要滑动路径中依次存在过 4、2、1 区域，即可在手机上轻松通过
             if (/4.*2.*1/.test(pathStr)) {
                 sessionStorage.setItem('gate_key', 'sudoku_trial');
                 window.location.href = 'sudoku.html';

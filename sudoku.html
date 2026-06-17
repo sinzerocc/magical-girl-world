@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
+    <title>Magical Girl World - Causal Seal</title>
+    <script>
+        if (sessionStorage.getItem('gate_key') !== 'sudoku_trial') {
+            alert('因果が歪んでいます。最初からやり直してください。');
+            window.location.href = 'index.html';
+        }
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Courier New", monospace; -webkit-user-select: none; user-select: none; }
+        body, html { width: 100%; height: 100%; background-color: #06020b; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        
+        body::before {
+            content: ''; position: absolute; width: 600px; height: 600px; 
+            background: radial-gradient(circle, rgba(136, 0, 255, 0.04) 0%, rgba(255, 0, 85, 0.03) 50%, transparent 100%);
+            border-radius: 50%; filter: blur(50px); z-index: 0; pointer-events: none;
+        }
+
+        .terminal-header {
+            color: #ff0055; font-size: 0.8rem; margin-bottom: 15px; letter-spacing: 2px; text-shadow: 0 0 10px rgba(255, 0, 85, 0.6);
+            text-align: center; z-index: 1; max-width: 90vw; line-height: 1.6;
+        }
+
+        .dashboard {
+            width: 92vw; max-width: 405px; background: rgba(15, 4, 15, 0.85);
+            border: 1px solid rgba(255, 0, 85, 0.25); border-bottom: none;
+            border-radius: 4px 4px 0 0; padding: 10px 15px; z-index: 1;
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.7rem; letter-spacing: 1px;
+        }
+        .db-stat { color: rgba(255, 255, 255, 0.45); }
+        .db-stat span { color: #ff0055; font-weight: bold; text-shadow: 0 0 5px #ff0055; }
+        #emptyCount { color: #9d00ff; text-shadow: 0 0 5px #9d00ff; }
+
+        .sudoku-grid {
+            display: grid; grid-template-columns: repeat(9, 1fr);
+            width: 92vw; max-width: 405px; height: 92vw; max-height: 405px;
+            background: rgba(15, 0, 25, 0.3);
+            border: 3px solid #ff0055; border-radius: 0 0 4px 4px;
+            box-shadow: 0 0 25px rgba(255, 0, 85, 0.2);
+            z-index: 1; position: relative; overflow: hidden;
+        }
+
+        .sudoku-cell {
+            position: relative; display: flex; justify-content: center; align-items: center;
+            background: #0a030f; border: 1px solid rgba(255, 0, 85, 0.08); 
+            color: rgba(255, 255, 255, 0.85); font-size: 1.1rem; font-weight: bold; text-align: center;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .sudoku-cell:nth-child(3n) { border-right: 2px solid rgba(255, 0, 85, 0.6); }
+        .sudoku-cell:nth-child(9n) { border-right: none; }
+        .row-accent { border-bottom: 2px solid rgba(255, 0, 85, 0.6) !important; }
+
+        .sudoku-cell.highlight-cross { background: rgba(255, 0, 85, 0.04); }
+        .sudoku-cell.highlight-active { background: rgba(157, 0, 255, 0.15) !important; box-shadow: inset 0 0 8px rgba(157, 0, 255, 0.3); }
+
+        .sudoku-cell input {
+            width: 100%; height: 100%; background: transparent; border: none;
+            color: #00ffcc; font-size: 1.1rem; font-weight: bold; text-align: center;
+            font-family: inherit; outline: none; -webkit-appearance: none;
+            z-index: 2; position: relative;
+        }
+        
+        .sudoku-cell input:focus { color: #00ffcc; text-shadow: 0 0 8px #00ffcc; }
+        .sudoku-cell.fixed { color: rgba(255, 0, 85, 0.7); text-shadow: 0 0 4px rgba(255,0,85,0.3); background: #120414; }
+
+        .toolbar {
+            width: 92vw; max-width: 405px; display: flex; justify-content: flex-end; margin-top: 15px; z-index: 1;
+        }
+        .hint-btn {
+            background: transparent; border: 1px solid #9d00ff; color: #9d00ff;
+            padding: 6px 14px; font-size: 0.75rem; font-weight: bold; border-radius: 4px;
+            cursor: pointer; letter-spacing: 1px; transition: all 0.3s;
+            box-shadow: 0 0 8px rgba(157, 0, 255, 0.1);
+        }
+        .hint-btn:hover:not(:disabled) { background: #9d00ff; color: #fff; box-shadow: 0 0 15px #9d00ff; }
+        .hint-btn:disabled { border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.15); cursor: not-allowed; box-shadow: none; }
+
+        .status-log {
+            margin-top: 15px; font-size: 0.75rem; color: #9d00ff; letter-spacing: 1px; z-index: 1;
+            min-height: 20px; text-shadow: 0 0 5px rgba(157, 0, 255, 0.4); text-align: center; max-width: 90vw;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="terminal-header" id="headerText">
+        [OBSCURA_RESONANCE_SEAL]: STAGE_CORRUPTED<br>
+        「 暗影共鸣法阵已生成。因果线已附带咒纹，允许向深渊索要 5 次指引。 」
+    </div>
+
+    <div class="dashboard">
+        <div class="db-stat">VOID_CELLS: <span id="emptyCount">0</span></div>
+        <div class="db-stat">SACRIFICE_REMAIN: <span id="hintCount">5</span>/5</div>
+    </div>
+
+    <div class="sudoku-grid" id="sudokuGrid"></div>
+
+    <div class="toolbar">
+        <button class="hint-btn" id="hintBtn">深渊低语 [REQUEST_ORACLE]</button>
+    </div>
+
+    <div class="status-log" id="statusLog">// 正在解析绝望残留...</div>
+
+    <audio id="solvedSfx" src="./clear.mp3"></audio>
+
+    <script>
+        let hintLeft = 5;
+        let lastFocusedCell = null;
+
+        function generateSudokuSolution() {
+            const mat = Array.from({ length: 9 }, () => Array(9).fill(0));
+            function isValid(r, c, val) {
+                for (let i = 0; i < 9; i++) {
+                    if (mat[r][i] === val || mat[i][c] === val) return false;
+                }
+                const boxRow = Math.floor(r / 3) * 3;
+                const boxCol = Math.floor(c / 3) * 3;
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        if (mat[boxRow + i][boxCol + j] === val) return false;
+                    }
+                }
+                return true;
+            }
+            function solve() {
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                        if (mat[r][c] === 0) {
+                            const nums = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+                            for (let num of nums) {
+                                if (isValid(r, c, num)) {
+                                    mat[r][c] = num;
+                                    if (solve()) return true;
+                                    mat[r][c] = 0;
+                                }
+                            }
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+            solve();
+            return mat;
+        }
+
+        const solution = generateSudokuSolution();
+        const puzzle = JSON.parse(JSON.stringify(solution));
+
+        const cellsToErase = 40; 
+        let erased = 0;
+        while (erased < cellsToErase) {
+            const r = Math.floor(Math.random() * 9);
+            const c = Math.floor(Math.random() * 9);
+            if (puzzle[r][c] !== 0) {
+                puzzle[r][c] = 0;
+                erased++;
+            }
+        }
+
+        const container = document.getElementById('sudokuGrid');
+        const logEl = document.getElementById('statusLog');
+        const emptyCountEl = document.getElementById('emptyCount');
+        const cellMapping = [];
+
+        for (let r = 0; r < 9; r++) {
+            cellMapping[r] = [];
+            for (let c = 0; c < 9; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'sudoku-cell';
+                cell.dataset.row = r;
+                cell.dataset.col = c;
+                
+                if (r === 2 || r === 5) { cell.classList.add('row-accent'); }
+
+                if (puzzle[r][c] !== 0) {
+                    cell.classList.add('fixed');
+                    cell.innerText = puzzle[r][c];
+                } else {
+                    const input = document.createElement('input');
+                    input.type = 'tel';
+                    input.maxLength = 1;
+                    input.dataset.row = r;
+                    input.dataset.col = c;
+                    
+                    input.addEventListener('focus', () => {
+                        lastFocusedCell = { r, c };
+                        highlightCross(r, c);
+                    });
+                    input.addEventListener('blur', removeHighlight);
+
+                    input.addEventListener('input', (e) => {
+                        if (!/^[1-9]$/.test(e.target.value)) {
+                            e.target.value = '';
+                        }
+                        checkMatrix();
+                    });
+                    cell.appendChild(input);
+                }
+                container.appendChild(cell);
+                cellMapping[r][c] = cell;
+            }
+        }
+
+        function highlightCross(targetRow, targetCol) {
+            removeHighlight();
+            const targetBoxRow = Math.floor(targetRow / 3) * 3;
+            const targetBoxCol = Math.floor(targetCol / 3) * 3;
+
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const isRow = (r === targetRow);
+                    const isCol = (c === targetCol);
+                    const isBox = (Math.floor(r / 3) * 3 === targetBoxRow && Math.floor(c / 3) * 3 === targetBoxCol);
+                    
+                    if (isRow || isCol || isBox) {
+                        if (r === targetRow && c === targetCol) {
+                            cellMapping[r][c].classList.add('highlight-active');
+                        } else {
+                            cellMapping[r][c].classList.add('highlight-cross');
+                        }
+                    }
+                }
+            }
+        }
+
+        function removeHighlight() {
+            const cells = container.querySelectorAll('.sudoku-cell');
+            cells.forEach(cell => {
+                cell.classList.remove('highlight-cross', 'highlight-active');
+            });
+        }
+
+        const hintBtn = document.getElementById('hintBtn');
+        hintBtn.addEventListener('click', () => {
+            if (hintLeft <= 0) return;
+
+            let targetR = null;
+            let targetC = null;
+
+            if (lastFocusedCell) {
+                const inputEl = cellMapping[lastFocusedCell.r][lastFocusedCell.c].querySelector('input');
+                if (inputEl && !inputEl.value) {
+                    targetR = lastFocusedCell.r;
+                    targetC = lastFocusedCell.c;
+                }
+            }
+
+            if (targetR === null) {
+                const emptyCells = [];
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                        const inputEl = cellMapping[r][c].querySelector('input');
+                        if (inputEl && !inputEl.value) {
+                            emptyCells.push({ r, c });
+                        }
+                    }
+                }
+                if (emptyCells.length > 0) {
+                    const randomPick = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                    targetR = randomPick.r;
+                    targetC = randomPick.c;
+                }
+            }
+
+            if (targetR !== null && targetC !== null) {
+                const correctValue = solution[targetR][targetC];
+                const inputEl = cellMapping[targetR][targetC].querySelector('input');
+                inputEl.value = correctValue;
+                
+                inputEl.style.textShadow = '0 0 12px #00ff99';
+                inputEl.style.color = '#00ff99';
+
+                hintLeft--;
+                document.getElementById('hintCount').innerText = hintLeft;
+                if (hintLeft <= 0) {
+                    hintBtn.disabled = true;
+                    hintBtn.innerText = "神谕熔断 [ORACLE_DEPLETED]";
+                }
+                
+                checkMatrix();
+                logEl.innerText = `// STATUS: 深渊强行渗透。已强制篡改刻印坐标 [Row:${targetR+1}, Col:${targetC+1}]`;
+            }
+        });
+
+        function checkMatrix() {
+            const currentGrid = Array.from({ length: 9 }, () => Array(9).fill(0));
+            const inputs = container.querySelectorAll('input');
+            let unfilledCount = 0;
+
+            for(let r=0; r<9; r++) {
+                for(let c=0; c<9; c++) {
+                    if (puzzle[r][c] !== 0) currentGrid[r][c] = puzzle[r][c];
+                }
+            }
+
+            inputs.forEach(input => {
+                const val = parseInt(input.value);
+                const r = parseInt(input.dataset.row);
+                const c = parseInt(input.dataset.col);
+                if (isNaN(val)) {
+                    unfilledCount++;
+                } else {
+                    currentGrid[r][c] = val;
+                }
+            });
+
+            emptyCountEl.innerText = unfilledCount;
+
+            if (unfilledCount > 0) {
+                logEl.style.color = '#9d00ff';
+                logEl.innerText = `// STATUS: 仪式推演中。剩余虚空裂隙: ${unfilledCount} //`;
+                return;
+            }
+
+            let hasError = false;
+            for (let i = 0; i < 9; i++) {
+                let rowSet = new Set(), colSet = new Set();
+                for (let j = 0; j < 9; j++) {
+                    if (rowSet.has(currentGrid[i][j]) || colSet.has(currentGrid[j][i])) {
+                        hasError = true; break;
+                    }
+                    rowSet.add(currentGrid[i][j]);
+                    colSet.add(currentGrid[j][i]);
+                }
+                if (hasError) break;
+            }
+
+            if (!hasError) {
+                for (let boxRow = 0; boxRow < 9; boxRow += 3) {
+                    for (let boxCol = 0; boxCol < 9; boxCol += 3) {
+                        let boxSet = new Set();
+                        for (let r = 0; r < 3; r++) {
+                            for (let c = 0; c < 3; c++) {
+                                let val = currentGrid[boxRow + r][boxCol + c];
+                                if (boxSet.has(val)) { hasError = true; break; }
+                                boxSet.add(val);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (hasError) {
+                logEl.style.color = '#ff0055';
+                logEl.innerText = "// STATUS: 逆向因果崩溃。阵列中存在互斥的刻印。";
+            } else {
+                logEl.style.color = '#00ffcc';
+                logEl.innerText = "// STATUS: 完美契合。虚空节点大门正在打开... //";
+                triggerAscension();
+            }
+        }
+
+        checkMatrix();
+
+        function triggerAscension() {
+            const sfx = document.getElementById('solvedSfx');
+            sfx.play().catch(()=>{});
+
+            document.getElementById('headerText').innerHTML = "「 封印已除，黑暗正在褪去。正在跨越次元阶梯。 」";
+            container.style.transition = "all 1.6s cubic-bezier(0.68, -0.55, 0.27, 1.55)";
+            container.style.transform = "scale(0.5) rotate(-15deg)";
+            container.style.opacity = "0";
+
+            setTimeout(() => {
+                sessionStorage.setItem('gate_key', 'stage_next_authorized');
+                window.location.href = 'next_stage.html';
+            }, 1800);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
+    <title>Magical Girl World - Observation Point</title>
+    <script>
+        if (sessionStorage.getItem('gate_key') !== 'stage_next_authorized') {
+            alert('因果が歪んでいます。試练を乗り越えてから来てください。');
+            window.location.href = 'sudoku.html';
+        }
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Hiragino Mincho ProN", "MS Mincho", "Courier New", serif; -webkit-user-select: none; user-select: none; }
+        body, html { width: 100%; height: 100%; background-color: #05020a; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        
+        .game-container {
+            position: relative; width: 100%; height: 100%; max-width: 800px; max-height: 600px;
+            background: #080312; border: 1px solid rgba(255, 0, 85, 0.15);
+            overflow: hidden; box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+            display: flex; flex-direction: column; justify-content: flex-end; padding: 20px;
+        }
+
+        .bg-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(20, 10, 35, 0.4) 0%, rgba(5, 2, 10, 0.95) 100%);
+            z-index: 1; transition: all 1.5s ease;
+        }
+        .bg-overlay.shock { background: radial-gradient(circle, rgba(150, 0, 40, 0.5) 0%, rgba(5, 2, 10, 0.98) 100%); }
+        .bg-overlay.hokkaido { background: radial-gradient(circle, rgba(0, 100, 150, 0.2) 0%, rgba(3, 1, 8, 0.98) 100%); }
+
+        .text-box {
+            position: relative; width: 100%; min-height: 160px;
+            background: rgba(10, 5, 18, 0.85); border: 1px solid rgba(255, 0, 85, 0.3);
+            border-radius: 6px; padding: 20px 25px; z-index: 5; cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(255, 0, 85, 0.05);
+            transition: border-color 0.5s;
+        }
+        .text-box:hover { border-color: rgba(255, 0, 85, 0.6); }
+
+        .speaker-name {
+            color: #ff0055; font-size: 0.95rem; font-weight: bold; margin-bottom: 10px;
+            letter-spacing: 2px; text-shadow: 0 0 5px rgba(255, 0, 85, 0.5);
+        }
+
+        .dialogue-text {
+            color: rgba(240, 230, 250, 0.9); font-size: 0.95rem; line-height: 1.8;
+            letter-spacing: 1.5px; min-height: 60px;
+        }
+
+        .next-indicator {
+            position: absolute; bottom: 12px; right: 20px; color: #ff0055;
+            font-size: 0.8rem; animation: pulse 1.2s infinite; display: none;
+        }
+
+        .options-container {
+            position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
+            width: 85%; display: flex; flex-direction: column; gap: 14px; z-index: 10;
+            display: none;
+        }
+        .option-btn {
+            background: rgba(13, 5, 23, 0.92); border: 1px solid rgba(157, 0, 255, 0.4);
+            color: rgba(220, 210, 240, 0.9); padding: 14px 20px; font-size: 0.85rem;
+            border-radius: 4px; cursor: pointer; text-align: center; letter-spacing: 1px;
+            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        .option-btn:hover {
+            border-color: #ff0055; color: #fff; background: rgba(255, 0, 85, 0.15);
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.3); transform: scale(1.02);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(-3px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div class="bg-overlay" id="bgOverlay"></div>
+        <div class="options-container" id="optionsContainer"></div>
+
+        <div class="text-box" id="textBox">
+            <div class="speaker-name" id="speakerName">阿树</div>
+            <div class="dialogue-text" id="dialogueText"></div>
+            <div class="next-indicator" id="nextIndicator">▼ CLICK</div>
+        </div>
+    </div>
+
+    <script>
+        const script = [
+            { type: "text", speaker: "阿树", text: "雨已经下了整整三天。" },
+            { type: "text", speaker: "阿树", text: "窗外的世界被一种灰蒙蒙的雾气笼罩着，像是某种被遗忘的时间切片。" },
+            { type: "text", speaker: "阿树", text: "我坐在书桌前，手里握着一支并不怎么好使的钢笔，听着雨滴敲打玻璃的声音。" },
+            { type: "text", speaker: "阿树", text: "那声音单调而持续，如同某种古老的咒语，一遍遍冲刷着记忆的河岸。" },
+            { type: "text", speaker: "她", text: "「阿树……」" },
+            { type: "text", speaker: "她", text: "声音轻得像是一片羽毛落在积水的街道上——「今晚月色真美。」" },
+            { type: "text", speaker: "阿树", text: "这是她每个月的十五号必说的话。我们住在东京郊外一栋老旧的木造公寓里，二楼的卧室里有一扇朝西的窗户。" },
+            { type: "text", speaker: "阿树", text: "每当满月升起，银色的光就会洒在她的侧脸上，勾勒出她鼻梁柔和的弧度。她在那里织毛衣，毛线球滚落在地板上，发出沉闷的声响。" },
+            { type: "text", speaker: "阿树", text: "我们相爱了三年。" },
+            { type: "text", speaker: "阿树", text: "在这三年里，我们经历过失业、重病、突如其来的搬家，以及无数个沉默的黄昏。" },
+            { type: "text", speaker: "阿树", text: "我记得那个夏天，我们在京都的岚山竹林里迷路，汗水浸透了衬衫，她回头看我时，眼神清澈得像一潭深井。那时我以为，这就是永恒。" },
+            
+            // 📍 选择机会 1
+            {
+                type: "choice",
+                options: [
+                    { text: "“所谓的永恒，就是不管发生什么都在一起。”", nextIdx: 12 },
+                    { text: "“那时候的我，根本不懂命运的沉重。”", nextIdx: 12 }
+                ]
+            },
+
+            { type: "text", speaker: "阿树", text: "人们常说，爱情是盲目的，但我觉得，爱情更像是一场漫长的寻找。寻找一个能听懂你沉默的人，寻找一个能在黑暗中与你并肩而坐的人。" },
+            { type: "text", speaker: "她", text: "「阿树，你觉得我们像不像两棵并肩生长的树？」有一次她问。" },
+            { type: "text", speaker: "阿树", text: "「像，」我回答，「根在地下纠缠，枝叶在风中相互扶持。」" },
+            { type: "text", speaker: "她", text: "她笑了，那笑容里有一种淡淡的哀伤，就像初秋落叶的颜色。" },
+            { type: "text", speaker: "阿树", text: "然而，命运总是喜欢在最甜蜜的时刻埋下伏笔。" },
+            { type: "text", speaker: "阿树", text: "那是我们在镰仓海边发现的那只旧海螺。我们曾对着它听海的声音，说那是来自大海深处的问候。" },
+            { type: "text", speaker: "阿树", text: "直到那个深秋的傍晚，她在整理阁楼上的旧箱子时，翻出了一张泛黄的照片。" },
+            { type: "text", speaker: "阿树", text: "照片上是一对年轻的夫妇，抱着一个襁褓中的婴儿。背景是这片海滩，远处是那座灯塔。她的手微微颤抖。" },
+            { type: "text", speaker: "她", text: "「阿树……」她的声音有些干涩，「你看这个男孩的眼睛。」" },
+            { type: "text", speaker: "阿树", text: "我凑过去看。那个男孩的眼睛深邃而明亮，眼角有一颗极小的痣——和我的一模一样。" },
+            { type: "text", speaker: "她", text: "「他是我的哥哥……」她说，目光没有离开照片。" },
+            { type: "text", speaker: "她", text: "「七岁那年，因为一场高烧，他被送往美国生活。母亲告诉他，哥哥叫‘阿树’，就像风中的树一样自由。」" },
+            { type: "text", speaker: "系统", text: "【空气突然凝固了。雨声似乎变小了，世界安静得能听见灰尘落地的声音。】", effect: "shock" },
+            { type: "text", speaker: "她", text: "「我找了他七年，直到在电车上遇见你。我觉得你像他，或者说，你身上有他的气息。」" },
+            { type: "text", speaker: "阿树", text: "我张了张嘴，却发不出声音。喉咙像是被什么堵住了。" },
+            { type: "text", speaker: "她", text: "「所以……」她轻声说，像是在宣读一份判决书——「我们是兄妹。」" },
+            { type: "text", speaker: "阿树", text: "那一刻，我感到一种巨大的空洞在胸腔里蔓延。我们以为我们是两棵并肩生长的树，原来，我们是同一棵树上分叉的两根枝桠。" },
+            
+            // 📍 选择机会 2
+            {
+                type: "choice",
+                options: [
+                    { text: "（抗拒与惶恐）“不……这绝不可能！怎么会这样……”", nextIdx: 30 },
+                    { text: "（死寂般的沉默）冰冷的真实感彻底剥离了视线。", nextIdx: 30 }
+                ]
+            },
+
+            { type: "text", speaker: "阿树", text: "世人说，兄妹恋爱是禁忌，是违背伦理的。但在我们面前，这些规则轻得像一张纸。" },
+            { type: "text", speaker: "她", text: "「不管别人怎么说……」她紧紧握住我的手，掌心温热，「我们是彼此的唯一。」" },
+            
+            // 📍 选择机会 3
+            {
+                type: "choice",
+                options: [
+                    { text: "“走吧，离开这个充满束缚的东京。”（坚守）", nextIdx: 33 },
+                    { text: "“我们不能再错下去了，那是无底深渊。”（退缩）", nextIdx: 50 }
+                ]
+            },
+
+            { type: "text", speaker: "阿树", text: "我们决定离开这里。离开这个充满回忆又充满束缚的东京。" },
+            { type: "text", speaker: "阿树", text: "在一个无月的夜晚，我们收拾好行囊，只带了一本诗集和那只海螺。我们坐上了开往北海道的最后一班列车。" },
+            
+            // 📍 选择机会 4
+            {
+                type: "choice",
+                options: [
+                    { text: "紧紧回握她的手：“无论前方是什么，我都陪你。”", nextIdx: 36 },
+                    { text: "列车停靠北国站台时，终究还是松开了手：“对不起……”", nextIdx: 45 }
+                ]
+            },
+
+            // 🏆 结局 1：在一起 (True End)
+            { type: "text", speaker: "阿树", text: "换乘渡轮，驶向那片未被地图标注的海域。那里有一个小岛，岛上只有一座灯塔和几棵老松树。", effect: "hokkaido" },
+            { type: "text", speaker: "阿树", text: "当我们踏上那片土地时，海风依旧，月光依旧。她转头看我，眼神比任何时候都要清澈。" },
+            { type: "text", speaker: "她", text: "「阿树，你看，这里没有别人。」" },
+            { type: "text", speaker: "阿树", text: "我点头，握住她的手。那一刻，我感到一种前所未有的自由。我们不再是社会意义上的兄妹，不再是恋人，我们是两个孤独的原子，融合了。" },
+            { type: "text", speaker: "她", text: "「有时候我觉得，我不是在寻找哥哥，而是在寻找另一个自己。」" },
+            { type: "text", speaker: "阿树", text: "「我也是。在遇见你之前，我只是一个人在雨中行走的幽灵。」" },
+            { type: "text", speaker: "阿树", text: "如今，我们住在那座灯塔下。日子平静而缓慢，像蜗牛爬过石板路。偶尔有船经过，带来远方的消息。但我们不在乎。" },
+            { type: "text", speaker: "阿树", text: "有时候，在深夜，我会醒来，听着她的呼吸声。我会想起镰仓的海，想起那个旧海螺，想起那张泛黄的照片。我会感到一丝悲伤，但更多是安宁。" },
+            { type: "text", speaker: "阿树", text: "毕竟，在这个广阔而冷漠的世界里，至少还有一个人，能听懂你的沉默，能看见你眼角的痣，能和你共享同一片月光。这就是我们要的全部了。" },
+            { type: "text", speaker: "她", text: "「阿树……月色真美。」" },
+            { type: "text", speaker: "阿树", text: "「是啊，真美。」雨还在下，但这里，永远只有月光。" },
+            { type: "text", speaker: "系统", text: "—— ENDING：【共生：双生树的极夜乐园】 ——" },
+
+            // 🍂 结局 2：离开
+            { type: "text", speaker: "阿树", text: "北行的列车带着呼啸远去，而我站在空旷的站台上，看着车窗里渐行渐远的侧影。" },
+            { type: "text", speaker: "阿树", text: "她隔着玻璃看着我，没有流泪，只有那一抹如初秋落叶般的哀伤。我们终究被推回了各自孤独的现实轨道。" },
+            { type: "text", speaker: "系统", text: "—— ENDING：【分离：平行线的远行】 ——" },
+
+            // 🌊 自杀路线子判定
+            { type: "text", speaker: "阿树", text: "无形却沉重的沉沦感化作剧痛，一刀刀将神经解剖。眼前的世界开始扭曲，理智彻底崩塌。" },
+            {
+                type: "choice",
+                options: [
+                    { text: "独自走向镰仓冰冷无声的深夜海岸……", nextIdx: 52 },
+                    { text: "清晨醒来，空荡的阁楼旧箱上只剩一封信件……", nextIdx: 55 }
+                ]
+            },
+
+            // 🌊 结局 3：男主自杀
+            { type: "text", speaker: "阿树", text: "我走进了镰仓的海。冰冷的海水漫过胸膛，灌进喉咙。在意识消失的最后一刻，耳边响起的不是大海的问候，而是终于解脱的叹息。" },
+            { type: "text", speaker: "系统", text: "—— ENDING：【沉海：湮灭于血缘深处】 ——" },
+
+            // ❄️ 结局 4：女主自杀
+            { type: "text", speaker: "阿树", text: "照片下压着一张泛黄的绝笔纸页，上面只有一行微弱的字迹：『谢谢你，哥哥。』她将自己永远留在了那个没有月光的绝望冬夜。" },
+            { type: "text", speaker: "系统", text: "—— ENDING：【凋零：折断的分叉枯枝】 ——" }
+        ];
+
+        let currentIdx = 0;
+        let isTyping = false;
+        let typingTimer = null;
+
+        const bgOverlay = document.getElementById('bgOverlay');
+        const textBox = document.getElementById('textBox');
+        const speakerName = document.getElementById('speakerName');
+        const dialogueText = document.getElementById('dialogueText');
+        const nextIndicator = document.getElementById('nextIndicator');
+        const optionsContainer = document.getElementById('optionsContainer');
+
+        function typeWriter(text, i, cb) {
+            if (i < text.length) {
+                dialogueText.innerHTML = text.substring(0, i + 1);
+                isTyping = true;
+                typingTimer = setTimeout(() => typeWriter(text, i + 1, cb), 35);
+            } else {
+                isTyping = false;
+                nextIndicator.style.display = 'block';
+                if (cb) cb();
+            }
+        }
+
+        function renderStep() {
+            nextIndicator.style.display = 'none';
+            optionsContainer.style.display = 'none';
+            
+            if (currentIdx >= script.length) {
+                sessionStorage.removeItem('gate_key');
+                alert('因果の物語が終結しました。');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const currentStep = script[currentIdx];
+
+            if (currentStep.effect) {
+                bgOverlay.className = "bg-overlay " + currentStep.effect;
+            }
+
+            if (currentStep.type === "text") {
+                speakerName.innerText = currentStep.speaker;
+                dialogueText.innerHTML = "";
+                
+                if (currentStep.speaker === "系统") {
+                    speakerName.style.color = "#9d00ff";
+                    speakerName.style.textShadow = "0 0 5px #9d00ff";
+                } else {
+                    speakerName.style.color = "#ff0055";
+                    speakerName.style.textShadow = "0 0 5px rgba(255, 0, 85, 0.5)";
+                }
+
+                typeWriter(currentStep.text, 0);
+            } else if (currentStep.type === "choice") {
+                textBox.style.pointerEvents = "none";
+                optionsContainer.innerHTML = "";
+                optionsContainer.style.display = "flex";
+
+                currentStep.options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = "option-btn";
+                    btn.innerText = opt.text;
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        currentIdx = opt.nextIdx;
+                        textBox.style.pointerEvents = "auto";
+                        renderStep();
+                    });
+                    optionsContainer.appendChild(btn);
+                });
+            }
+        }
+
+        textBox.addEventListener('click', () => {
+            if (script[currentIdx] && script[currentIdx].type === "choice") return;
+
+            if (isTyping) {
+                clearTimeout(typingTimer);
+                isTyping = false;
+                dialogueText.innerHTML = script[currentIdx].text;
+                nextIndicator.style.display = 'block';
+            } else {
+                if ([44, 47, 49, 51, 54, 56].includes(currentIdx)) {
+                    currentIdx = script.length;
+                } else {
+                    currentIdx++;
+                }
+                renderStep();
+            }
+        });
+
+        renderStep();
+    </script>
+</body>
+</html>
