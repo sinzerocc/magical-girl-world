@@ -47,7 +47,7 @@
         .result-text.show { opacity: 1; }
 
         /* ==========================================
-           🩸 狂暴重构：全屏流血与剧烈晃动特效（极速 1/3 压缩版）
+           🩸 全屏流血与剧烈晃动特效（极速瞬闪版）
            ========================================== */
         .blood-overlay {
             position: absolute; top: -100%; left: 0; width: 100%; height: 100%;
@@ -57,7 +57,6 @@
                 rgba(40, 0, 0, 0.85) 85%, 
                 transparent 100%);
             z-index: 999; pointer-events: none; 
-            /* 特效光影坠落时间压缩：由 0.4s 缩短至 0.13s */
             transition: top 0.13s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .blood-overlay.drip { top: 0; }
@@ -150,6 +149,9 @@
             { isTarget: false, name: "【 月 / THE MOON 】", desc: "混沌を照らす不吉な月光。", conclusion: "「幻影に惑わされたな。もう一度選びなさい…」\n(You were deceived by illusions. Choose again...)" }
         ];
 
+        // 记录页面加载进来的初始时间戳（用于10秒必中机制判断）
+        const enterTime = Date.now();
+
         // 从本地获取累计失败次数
         let failCount = parseInt(localStorage.getItem('p3_fail_count') || '0'); 
 
@@ -162,7 +164,7 @@
         let canDraw = false; 
         let hasDrawn = false; 
 
-        // 🎯 限制：开始3秒不能选择任何牌（50ms 后才激活 ready 状态）
+        // 开始3秒不能选择任何牌
         setTimeout(() => {
             canDraw = true; 
             const cards = document.querySelectorAll('.tarot-card');
@@ -173,11 +175,14 @@
             if (!canDraw || hasDrawn) return;
             hasDrawn = true;
 
-            // 🎯 核心机制：随机12次必定中奖保底（第11次失败后，第12次强行替换为目标卡牌）
-            // 并彻底删除了原先 10 秒直接通关的时间作弊后门
-            const triggerGuaranteedWin = (failCount >= 11);
+            // 👑 恢复双重保底必中判定机制：
+            // 判定1：如果在本页面停留、冥想等待超过 10 秒以上才选择
+            // 判定2：或者历史累计失败次数已经达到了 11 次以上
+            const isStayTenSeconds = (Date.now() - enterTime >= 10000);
+            const triggerGuaranteedWin = isStayTenSeconds || (failCount >= 11);
 
             if (triggerGuaranteedWin) {
+                // 将被点击的那张牌强行变更为目标【愚者】
                 shuffled[index] = tarotPool.find(item => item.isTarget);
                 document.getElementById(`name${index}`).innerText = shuffled[index].name;
                 document.getElementById(`desc${index}`).innerText = shuffled[index].desc;
@@ -192,7 +197,7 @@
                 }
             });
 
-            document.getElementById('guideTitle').innerHTML = "「 啓示 / THE REVELATION LOG 」";
+            document.getElementById('guideTitle').innerHTML = "「 啓示 / THE REVELATION LOG LOG 」";
             const resultBox = document.getElementById('resultText');
             resultBox.innerText = shuffled[index].conclusion;
             resultBox.classList.add('show');
@@ -205,26 +210,22 @@
                 failCount++;
                 localStorage.setItem('p3_fail_count', failCount);
 
-                // ==========================================
-                // ⏱️ 狂暴流血加速压缩版（总历时缩短为原先的 1/3，约 610ms）
-                // ==========================================
-                
-                // 1. 瞬间（0.06秒后）爆发流血与疯狂震动
+                // 1. 瞬间爆发流血与疯狂震动
                 setTimeout(() => {
                     document.body.classList.add('shake-active');
                     document.getElementById('bloodOverlay').classList.add('drip');
                     document.getElementById('mainContainer').style.filter = "blur(6px) grayscale(1)";
-                }, 60);
+                }, 10);
 
-                // 2. 0.16秒后，台词闪现
+                // 2. 台词闪现
                 setTimeout(() => {
                     document.getElementById('failText').classList.add('show');
-                }, 160);
+                }, 15);
 
-                // 3. 0.61秒（610ms）快速强推页面重载，绝不拖泥带水
+                // 3. ⏰ 闪光重置时间大幅压缩：仅需 20 毫秒强推重载，绝不拖泥带水
                 setTimeout(() => { 
                     window.location.reload(); 
-                }, 610);
+                }, 20);
             }
         }
     </script>
