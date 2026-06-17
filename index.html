@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>神秘界面</title>
+    <title>@#%￥%……%&……</title>
     <style>
         * {
             margin: 0;
@@ -31,17 +31,14 @@
 </head>
 <body>
 
-    <!-- 随机背景图片 -->
     <img id="randomImg" class="bg-image" src="" alt="Background">
 
-    <!-- 背景音乐：把 src 换成你准备好的音乐文件名，比如 bgm.mp3 -->
     <audio id="bgm" src="bgm.mp3" loop></audio>
 
     <script>
         // ==========================================
         // 1. 配置你自己的图片文件名
         // ==========================================
-        // 把你准备好的图片放到和这个 html 同一个文件夹下，并在下面写上文件名
         const myImages = [
             '1.jpg',
             '2.jpg',
@@ -80,10 +77,23 @@
 
             // 如果 5 秒内的点击次数达到了 8 次
             if (clickTimestamps.length >= 8) {
-                // 大功告成，直接肉眼可见地跳转！
+                // 大功告成，悄悄埋下进入第二关的命运凭证，然后跳转！
+                sessionStorage.setItem('gate_key', 'stage2');
                 window.location.href = 'page2.html';
             }
         });
+
+        // ==========================================
+        // ⏳ 3. 新增隐藏机制：静止停留 3 分钟自动飞升
+        // ==========================================
+        // 3分钟 = 3 * 60 * 1000 = 180000 毫秒
+        setTimeout(() => {
+            // 检查一下，如果玩家已经在 3 分钟内靠手速提前过关了，就不重复执行
+            if (sessionStorage.getItem('gate_key') !== 'stage2') {
+                sessionStorage.setItem('gate_key', 'stage2');
+                window.location.href = 'page2.html';
+            }
+        }, 180000);
     </script>
 </body>
 </html>

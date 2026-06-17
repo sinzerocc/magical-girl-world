@@ -4,144 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Magical Girl World - The Dawn</title>
+    <script>
+        // 看守机制：防止直接输入 URL 偷跑
+        if (sessionStorage.getItem('gate_key') !== 'stage4_dawn') {
+            alert('運命を欺くことはできない。 / You cannot deceive fate.');
+            window.location.href = 'index.html';
+        }
+    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body, html { width: 100%; height: 100%; overflow: hidden; background-color: #0d0d16; font-family: "MS Mincho", "Heiti SC", serif; touch-action: manipulation; }
+        .bg-image { width: 100%; height: 100%; object-fit: cover; pointer-events: none; user-select: none; position: absolute; top: 0; left: 0; z-index: 1; filter: brightness(0.4) blur(4px) contrast(1.1); animation: bgFadeIn 3s ease; }
+        .light-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(138, 43, 226, 0.08)); z-index: 2; pointer-events: none; }
         
-        /* 延续本地随机背景图逻辑 */
-        .bg-image { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            pointer-events: none; 
-            user-select: none; 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            z-index: 1; 
-            filter: brightness(0.4) blur(4px) contrast(1.1);
-            animation: bgFadeIn 3s ease;
-        }
-
-        /* 圣光叠层 */
-        .light-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(138, 43, 226, 0.08));
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        .container { 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            z-index: 3; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            padding: 20px;
-            overflow-y: auto; /* 防止照片太长时溢出 */
-        }
-
-        /* 黎明大标题 */
-        .title { 
-            color: #fff; 
-            font-size: 2.2rem; 
-            text-align: center; 
-            letter-spacing: 5px; 
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8), 0 0 30px rgba(138, 43, 226, 0.5); 
-            user-select: none; 
-            pointer-events: none; 
-            margin-bottom: 25px;
-            animation: titleGlow 2s ease-in-out infinite alternate;
-        }
-
-        /* 双语叙事框 */
-        .terminal-text {
-            width: 100%;
-            max-width: 650px;
-            background: rgba(5, 5, 10, 0.8);
-            border: 1px solid rgba(0, 255, 255, 0.2);
-            border-radius: 8px;
-            padding: 25px;
-            box-shadow: 0 0 25px rgba(0, 0, 0, 0.9);
-            color: #e0e0e0;
-            font-size: 1rem;
-            line-height: 1.8;
-            letter-spacing: 1px;
-            margin-bottom: 30px;
-        }
-
-        .line { margin-bottom: 10px; opacity: 0; transform: translateY(5px); transition: all 0.5s ease; }
+        /* 容器调整：允许有滚动条应对小屏幕，改为上下撑开的流式布局 */
+        .container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; overflow-y: auto; }
+        
+        /* 新增：网页最上方正中间的漂浮迎宾文字 */
+        .welcome-header { color: rgba(255, 255, 255, 0.85); font-size: 1.1rem; text-align: center; letter-spacing: 4px; line-height: 1.8; margin-bottom: 30px; text-shadow: 0 0 10px rgba(255, 255, 255, 0.3); animation: pulse 4s infinite ease-in-out; }
+        
+        .title { color: #fff; font-size: 2.2rem; text-align: center; letter-spacing: 5px; text-shadow: 0 0 15px rgba(0, 255, 255, 0.8), 0 0 30px rgba(138, 43, 226, 0.5); user-select: none; pointer-events: none; margin-bottom: 25px; animation: titleGlow 2s ease-in-out infinite alternate; }
+        .terminal-text { width: 100%; max-width: 650px; background: rgba(5, 5, 10, 0.8); border: 1px solid rgba(0, 255, 255, 0.2); border-radius: 8px; padding: 25px; box-shadow: 0 0 25px rgba(0, 0, 0, 0.9); color: #e0e0e0; font-size: 1rem; line-height: 1.8; letter-spacing: 1px; margin-bottom: 30px; }
+        .line { margin-bottom: 10px; opacity: 0; transform: translateY(5px); transition: all 0.8s ease; }
         .line.visible { opacity: 1; transform: translateY(0); }
         .line.highlight { color: #00ffff; text-shadow: 0 0 5px #00ffff; }
-
-        /* ==========================================
-           用户自定义照片与华丽相框 
-        ========================================== */
-        .photo-frame {
-            opacity: 0;
-            transform: scale(0.9) translateY(20px);
-            transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1), transform 2s cubic-bezier(0.4, 0, 0.2, 1);
-            max-width: 450px;
-            width: 90%;
-            /* 曜金古典质感相框：双重边框加复杂阴影 */
-            background: #11141c;
-            padding: 15px;
-            border: 4px solid #d4af37;
-            outline: 2px solid #11141c;
-            box-shadow: 0 0 0 6px rgba(212, 175, 55, 0.3), 0 15px 35px rgba(0,0,0,0.9), 0 0 30px rgba(212,175,55,0.2);
-            border-radius: 4px;
-            text-align: center;
-        }
         
-        /* 当打字机结束后触发显示 */
-        .photo-frame.reveal {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-        }
-
-        .final-photo {
-            width: 100%;
-            height: auto;
-            display: block;
-            border: 1px solid #000;
-            filter: sepia(0.1) contrast(1.05); /* 赋予照片一丝丝复古高级感 */
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-        }
+        /* 相框样式：由于要引导人去点，增加一个手型指针效果 */
+        .photo-frame { opacity: 0; transform: scale(0.9) translateY(20px); transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1), transform 2s cubic-bezier(0.4, 0, 0.2, 1); max-width: 450px; width: 90%; background: #11141c; padding: 15px; border: 4px solid #d4af37; outline: 2px solid #11141c; box-shadow: 0 0 0 6px rgba(212, 175, 55, 0.3), 0 15px 35px rgba(0,0,0,0.9), 0 0 30px rgba(212,175,55,0.2); border-radius: 4px; text-align: center; cursor: pointer; }
+        .photo-frame.reveal { opacity: 1; transform: scale(1) translateY(0); }
+        .final-photo { width: 100%; height: auto; display: block; border: 1px solid #000; filter: sepia(0.1) contrast(1.05); box-shadow: inset 0 0 20px rgba(0,0,0,0.5); pointer-events: none; }
 
         @keyframes bgFadeIn { from { filter: brightness(0) blur(10px); } to { filter: brightness(0.4) blur(4px) contrast(1.1); } }
         @keyframes titleGlow { from { text-shadow: 0 0 15px rgba(0, 255, 255, 0.8); } to { text-shadow: 0 0 25px rgba(0, 255, 255, 1), 0 0 15px rgba(138, 43, 226, 0.8); } }
+        @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <!-- 本地素材调用 -->
     <img id="randomImg" class="bg-image" src="" alt="The Dawn">
     <div class="light-overlay"></div>
 
     <div class="container">
+        <div class="welcome-header">
+            終点に到達しました。おめでとうございます。<br>
+            Welcome to the destination. Congratulations.
+        </div>
+
         <div class="title">「 暁 / THE DAWN 」</div>
-
-        <!-- 自动打印的双语叙事文本 -->
         <div class="terminal-text" id="terminalBox"></div>
-
-        <!-- 终极照片墙相框 -->
-        <div class="photo-frame" id="photoFrame">
-            <!-- 你可以把你的终极照片命名为 photo.jpg 放在同目录下，也可以改这里的src -->
+        
+        <div class="photo-frame" id="photoFrame" onclick="checkFrameClicks()">
             <img class="final-photo" src="./photo.jpg" alt="The Miracle">
         </div>
     </div>
 
-    <!-- 本地最后一首歌曲：bgm4.mp3 -->
     <audio id="bgm4" src="./bgm4.mp3" loop></audio>
 
     <script>
-        // 1. 背景与音乐初始化
         const myImages = ['./p41.jpg'];
         document.getElementById('randomImg').src = myImages[Math.floor(Math.random() * myImages.length)];
 
@@ -152,19 +71,17 @@
         tryPlayMusic();
         document.addEventListener('click', tryPlayMusic);
 
-        // 2. 史诗感双语台词
         const scriptData = [
             { text: "無尽の輪廻を破り、ここまで辿り着いた旅人よ。", highlight: false },
             { text: "You have broken the endless loop and reached the end, traveler.", highlight: false },
             { text: "不条理な運命に縛られた魔法少女の世界は、ここで終わりを告げる。", highlight: false },
             { text: "The world of magical girls bound by absurd fate ends here.", highlight: false },
-            { text: "君が手にしたのは、白紙のカード、そして真実の自由だ。", highlight: true },
+            { text: "君が手にしたのは、白紙のカード、精度高き真実の自由だ。", highlight: true },
             { text: "What you hold now is a blank card, and true freedom.", highlight: true },
             { text: "「奇跡は、諦めない心の中にだけ存在する。」", highlight: false },
             { text: "\"Miracles exist only within a heart that never gives up.\"", highlight: false }
         ];
 
-        // 3. 动态逐行浮现逻辑
         const box = document.getElementById('terminalBox');
         let currentLine = 0;
 
@@ -175,25 +92,39 @@
                 p.className = 'line';
                 if (data.highlight) p.classList.add('highlight');
                 p.innerText = data.text;
-                
                 box.appendChild(p);
-
-                setTimeout(() => {
-                    p.classList.add('visible');
-                }, 50);
-
+                setTimeout(() => { p.classList.add('visible'); }, 50);
                 currentLine++;
-                setTimeout(printNextLine, 1100); // 每一行间隔 1.1 秒
+                // 🛠️ 速度变慢：把原来的 1100 变更为 2200 毫秒出现一行
+                setTimeout(printNextLine, 1200);
             } else {
-                // 4. 文字全部打印完后，压轴的华丽相框带动画丝滑浮现！
                 setTimeout(() => {
                     document.getElementById('photoFrame').classList.add('reveal');
                 }, 500);
             }
         }
 
-        // 启动打字机
         setTimeout(printNextLine, 1000);
+
+        // ==========================================
+        // 🔒 隐藏机制：相框5秒点5下算法
+        // ==========================================
+        let frameClicks = [];
+        function checkFrameClicks() {
+            const now = Date.now();
+            frameClicks.push(now);
+            
+            // 过滤掉超过5秒的点击
+            frameClicks = frameClicks.filter(time => now - time < 5000);
+            
+            if (frameClicks.length >= 5) {
+                // 1. 临时埋下通往超隐藏网页的独立高阶钥匙！
+                sessionStorage.setItem('gate_key', 'stage_secret_void');
+                
+                // 2. 跳转去一个毫无规律可循的文件名里（让猜测和爆破彻底失效）
+                window.location.href = 'singularity-void.html';
+            }
+        }
     </script>
 </body>
 </html>
