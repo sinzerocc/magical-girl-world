@@ -165,7 +165,10 @@
         const solution = generateSudokuSolution();
         const puzzle = JSON.parse(JSON.stringify(solution));
 
-        const cellsToErase = 40; 
+        // ==========================================
+        // ⚙️ 难度下调：随机生成 15 到 20 个空格
+        // ==========================================
+        const cellsToErase = Math.floor(Math.random() * (20 - 15 + 1)) + 15; 
         let erased = 0;
         while (erased < cellsToErase) {
             const r = Math.floor(Math.random() * 9);
@@ -286,7 +289,6 @@
                 const inputEl = cellMapping[targetR][targetC].querySelector('input');
                 inputEl.value = correctValue;
                 
-                // 提示数字采用柔和的淡青绿反馈
                 inputEl.style.textShadow = '0 0 6px rgba(100, 237, 191, 0.6)';
                 inputEl.style.color = '#64edbf';
 
@@ -361,7 +363,7 @@
             }
 
             if (hasError) {
-                logEl.style.color = '#e27387'; // 柔和的肉粉红作为错误提示，避免刺眼大红
+                logEl.style.color = '#e27387';
                 logEl.innerText = "// STATUS: 逆向因果崩溃。阵列中存在互斥的刻印。";
             } else {
                 logEl.style.color = '#00ffcc';
