@@ -47,19 +47,18 @@
         .result-text.show { opacity: 1; }
 
         /* ==========================================
-           🩸 狂暴重构：全屏流血与剧烈晃动特效（快节奏）
+           🩸 狂暴重构：全屏流血与剧烈晃动特效（极速 1/3 压缩版）
            ========================================== */
         .blood-overlay {
             position: absolute; top: -100%; left: 0; width: 100%; height: 100%;
-            /* 更加深红、粘稠、绝望的多层渐变血污 */
             background: linear-gradient(to bottom, 
                 rgba(110, 0, 0, 0.95) 0%, 
                 rgba(139, 0, 0, 0.9) 40%, 
                 rgba(40, 0, 0, 0.85) 85%, 
                 transparent 100%);
             z-index: 999; pointer-events: none; 
-            /* 暴力的流血动画速度：0.4秒直接坠落铺满 */
-            transition: top 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            /* 特效光影坠落时间压缩：由 0.4s 缩短至 0.13s */
+            transition: top 0.13s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .blood-overlay.drip { top: 0; }
 
@@ -67,12 +66,11 @@
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
             z-index: 1000; color: #ff2222; text-align: center; width: 100%;
             font-size: 1.6rem; font-weight: bold; letter-spacing: 4px; line-height: 2.2;
-            opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
+            opacity: 0; transition: opacity 0.1s ease, transform 0.1s ease;
             text-shadow: 0 0 20px #000, 0 0 10px #ff0000, 0 0 30px #ff0000; pointer-events: none;
         }
         .fail-text-overlay.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
-        /* 大幅度高频屏幕震颤 */
         @keyframes hardcore-shake {
             0%, 100% { transform: translate(0, 0) rotate(0deg); }
             10% { transform: translate(-8px, 6px) rotate(-2deg); }
@@ -97,7 +95,7 @@
 
     <div class="container" id="mainContainer">
         <div class="title" id="guideTitle">
-            「 運命の選択 / The Choice of DestinyToggle 」<br>
+            「 運命の選択 / The Choice of Destiny 」<br>
             <span style="font-size: 1rem; color: #aaa; display: block; margin-top: 10px;">目を閉じて、心の雑音を聞きなさい。四つの選択肢から、あなたの終点を選べ。</span>
             <span style="font-size: 0.85rem; color: #888; display: block;">Close your eyes. Choose your destination from the four choices.</span>
         </div>
@@ -152,7 +150,7 @@
             { isTarget: false, name: "【 月 / THE MOON 】", desc: "混沌を照らす不吉な月光。", conclusion: "「幻影に惑わされたな。もう一度選びなさい…」\n(You were deceived by illusions. Choose again...)" }
         ];
 
-        const loadTime = Date.now(); 
+        // 从本地获取累计失败次数
         let failCount = parseInt(localStorage.getItem('p3_fail_count') || '0'); 
 
         let shuffled = [...tarotPool].sort(() => Math.random() - 0.5);
@@ -164,6 +162,7 @@
         let canDraw = false; 
         let hasDrawn = false; 
 
+        // 🎯 限制：开始3秒不能选择任何牌（3000ms 后才激活 ready 状态）
         setTimeout(() => {
             canDraw = true; 
             const cards = document.querySelectorAll('.tarot-card');
@@ -174,8 +173,9 @@
             if (!canDraw || hasDrawn) return;
             hasDrawn = true;
 
-            const timeSpent = (Date.now() - loadTime) / 1000;
-            const triggerGuaranteedWin = (failCount >= 3) || (timeSpent >= 10);
+            // 🎯 核心机制：随机12次必定中奖保底（第11次失败后，第12次强行替换为目标卡牌）
+            // 并彻底删除了原先 10 秒直接通关的时间作弊后门
+            const triggerGuaranteedWin = (failCount >= 11);
 
             if (triggerGuaranteedWin) {
                 shuffled[index] = tarotPool.find(item => item.isTarget);
@@ -206,25 +206,25 @@
                 localStorage.setItem('p3_fail_count', failCount);
 
                 // ==========================================
-                // ⏱️ 狂暴流血核心逻辑（总历时约 1.8 秒）
+                // ⏱️ 狂暴流血加速压缩版（总历时缩短为原先的 1/3，约 610ms）
                 // ==========================================
                 
-                // 1. 瞬间（0.2秒后）引爆流血、屏幕疯狂摇晃，原UI开始模糊
+                // 1. 瞬间（0.06秒后）爆发流血与疯狂震动
                 setTimeout(() => {
                     document.body.classList.add('shake-active');
                     document.getElementById('bloodOverlay').classList.add('drip');
                     document.getElementById('mainContainer').style.filter = "blur(6px) grayscale(1)";
-                }, 200);
+                }, 60);
 
-                // 2. 在血幕拉下的过程中（0.5秒后），中央带有大范围阴影和霓虹特效的残酷台词瞬间弹出
+                // 2. 0.16秒后，台词闪现
                 setTimeout(() => {
                     document.getElementById('failText').classList.add('show');
-                }, 500);
+                }, 160);
 
-                // 3. 全事件精确控制在 1.85 秒（1850ms）左右强制重载页面，干净利落
+                // 3. 0.61秒（610ms）快速强推页面重载，绝不拖泥带水
                 setTimeout(() => { 
                     window.location.reload(); 
-                }, 1850);
+                }, 610);
             }
         }
     </script>

@@ -12,78 +12,90 @@
     </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Courier New", monospace; -webkit-user-select: none; user-select: none; }
-        body, html { width: 100%; height: 100%; background-color: #06020b; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        
+        /* 👁️ 护眼微调：整体背景换成低饱和度暗蓝黑，降低刺眼度 */
+        body, html { width: 100%; height: 100%; background-color: #0b0d13; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         
         body::before {
             content: ''; position: absolute; width: 600px; height: 600px; 
-            background: radial-gradient(circle, rgba(136, 0, 255, 0.04) 0%, rgba(255, 0, 85, 0.03) 50%, transparent 100%);
+            background: radial-gradient(circle, rgba(0, 162, 255, 0.03) 0%, rgba(136, 0, 255, 0.01) 60%, transparent 100%);
             border-radius: 50%; filter: blur(50px); z-index: 0; pointer-events: none;
         }
 
+        /* 文本和头部：降低饱和度，改为温和的淡灰白与深青灰 */
         .terminal-header {
-            color: #ff0055; font-size: 0.8rem; margin-bottom: 15px; letter-spacing: 2px; text-shadow: 0 0 10px rgba(255, 0, 85, 0.6);
+            color: #b0c4de; font-size: 0.8rem; margin-bottom: 15px; letter-spacing: 2px; text-shadow: 0 0 5px rgba(176, 196, 222, 0.4);
             text-align: center; z-index: 1; max-width: 90vw; line-height: 1.6;
         }
 
+        /* 面板：中性深色背景与冷灰色边框 */
         .dashboard {
-            width: 92vw; max-width: 405px; background: rgba(15, 4, 15, 0.85);
-            border: 1px solid rgba(255, 0, 85, 0.25); border-bottom: none;
+            width: 92vw; max-width: 405px; background: rgba(20, 24, 33, 0.9);
+            border: 1px solid rgba(176, 196, 222, 0.2); border-bottom: none;
             border-radius: 4px 4px 0 0; padding: 10px 15px; z-index: 1;
             display: flex; justify-content: space-between; align-items: center;
             font-size: 0.7rem; letter-spacing: 1px;
         }
-        .db-stat { color: rgba(255, 255, 255, 0.45); }
-        .db-stat span { color: #ff0055; font-weight: bold; text-shadow: 0 0 5px #ff0055; }
-        #emptyCount { color: #9d00ff; text-shadow: 0 0 5px #9d00ff; }
+        .db-stat { color: rgba(255, 255, 255, 0.5); }
+        .db-stat span { color: #6495ed; font-weight: bold; text-shadow: 0 0 4px rgba(100, 149, 237, 0.5); }
+        #emptyCount { color: #87cefa; text-shadow: 0 0 4px rgba(135, 206, 250, 0.5); }
 
+        /* 数独主网格：低饱和度的冷色调边框，避开亮粉和深红 */
         .sudoku-grid {
             display: grid; grid-template-columns: repeat(9, 1fr);
             width: 92vw; max-width: 405px; height: 92vw; max-height: 405px;
-            background: rgba(15, 0, 25, 0.3);
-            border: 3px solid #ff0055; border-radius: 0 0 4px 4px;
-            box-shadow: 0 0 25px rgba(255, 0, 85, 0.2);
+            background: #10141d;
+            border: 3px solid #4a5768; border-radius: 0 0 4px 4px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
             z-index: 1; position: relative; overflow: hidden;
         }
 
+        /* 普通格子底色：暗灰黑，细边框降低对比度 */
         .sudoku-cell {
             position: relative; display: flex; justify-content: center; align-items: center;
-            background: #0a030f; border: 1px solid rgba(255, 0, 85, 0.08); 
-            color: rgba(255, 255, 255, 0.85); font-size: 1.1rem; font-weight: bold; text-align: center;
-            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+            background: #141923; border: 1px solid rgba(255, 255, 255, 0.05); 
+            color: #d1d5db; font-size: 1.1rem; font-weight: bold; text-align: center;
+            transition: background-color 0.15s ease, box-shadow 0.15s ease;
         }
 
-        .sudoku-cell:nth-child(3n) { border-right: 2px solid rgba(255, 0, 85, 0.6); }
+        /* 3x3 宫格粗线：使用冷静的灰蓝色，不刺眼但也足够清晰 */
+        .sudoku-cell:nth-child(3n) { border-right: 2px solid #4a5768; }
         .sudoku-cell:nth-child(9n) { border-right: none; }
-        .row-accent { border-bottom: 2px solid rgba(255, 0, 85, 0.6) !important; }
+        .row-accent { border-bottom: 2px solid #4a5768 !important; }
 
-        .sudoku-cell.highlight-cross { background: rgba(255, 0, 85, 0.04); }
-        .sudoku-cell.highlight-active { background: rgba(157, 0, 255, 0.15) !important; box-shadow: inset 0 0 8px rgba(157, 0, 255, 0.3); }
+        /* 👁️ 辅助高亮微调：极其柔和的淡蓝，防止晃眼 */
+        .sudoku-cell.highlight-cross { background: rgba(0, 162, 255, 0.04); }
+        .sudoku-cell.highlight-active { background: rgba(100, 149, 237, 0.18) !important; box-shadow: inset 0 0 6px rgba(100, 149, 237, 0.25); }
 
+        /* 用户输入框：温和柔滑的浅薄荷绿（#a3eae0） */
         .sudoku-cell input {
             width: 100%; height: 100%; background: transparent; border: none;
-            color: #00ffcc; font-size: 1.1rem; font-weight: bold; text-align: center;
+            color: #a3eae0; font-size: 1.1rem; font-weight: bold; text-align: center;
             font-family: inherit; outline: none; -webkit-appearance: none;
             z-index: 2; position: relative;
         }
         
-        .sudoku-cell input:focus { color: #00ffcc; text-shadow: 0 0 8px #00ffcc; }
-        .sudoku-cell.fixed { color: rgba(255, 0, 85, 0.7); text-shadow: 0 0 4px rgba(255,0,85,0.3); background: #120414; }
+        .sudoku-cell input:focus { color: #bffff3; text-shadow: 0 0 5px rgba(191, 255, 243, 0.6); }
+        
+        /* 预设固定数字：沉稳的灰蓝色（#7f8c9d），底色稍微加深以示区分 */
+        .sudoku-cell.fixed { color: #7f8c9d; text-shadow: none; background: #0f121a; }
 
+        /* 工具栏与按钮 */
         .toolbar {
             width: 92vw; max-width: 405px; display: flex; justify-content: flex-end; margin-top: 15px; z-index: 1;
         }
         .hint-btn {
-            background: transparent; border: 1px solid #9d00ff; color: #9d00ff;
+            background: transparent; border: 1px solid #5c7599; color: #8ba2c4;
             padding: 6px 14px; font-size: 0.75rem; font-weight: bold; border-radius: 4px;
-            cursor: pointer; letter-spacing: 1px; transition: all 0.3s;
-            box-shadow: 0 0 8px rgba(157, 0, 255, 0.1);
+            cursor: pointer; letter-spacing: 1px; transition: all 0.2s;
         }
-        .hint-btn:hover:not(:disabled) { background: #9d00ff; color: #fff; box-shadow: 0 0 15px #9d00ff; }
-        .hint-btn:disabled { border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.15); cursor: not-allowed; box-shadow: none; }
+        .hint-btn:hover:not(:disabled) { background: #3b4b61; color: #fff; border-color: #8ba2c4; }
+        .hint-btn:disabled { border-color: rgba(255,255,255,0.08); color: rgba(255,255,255,0.2); cursor: not-allowed; }
 
+        /* 状态日志 */
         .status-log {
-            margin-top: 15px; font-size: 0.75rem; color: #9d00ff; letter-spacing: 1px; z-index: 1;
-            min-height: 20px; text-shadow: 0 0 5px rgba(157, 0, 255, 0.4); text-align: center; max-width: 90vw;
+            margin-top: 15px; font-size: 0.75rem; color: #7f8c9d; letter-spacing: 1px; z-index: 1;
+            min-height: 20px; text-align: center; max-width: 90vw;
         }
     </style>
 </head>
@@ -274,8 +286,9 @@
                 const inputEl = cellMapping[targetR][targetC].querySelector('input');
                 inputEl.value = correctValue;
                 
-                inputEl.style.textShadow = '0 0 12px #00ff99';
-                inputEl.style.color = '#00ff99';
+                // 提示数字采用柔和的淡青绿反馈
+                inputEl.style.textShadow = '0 0 6px rgba(100, 237, 191, 0.6)';
+                inputEl.style.color = '#64edbf';
 
                 hintLeft--;
                 document.getElementById('hintCount').innerText = hintLeft;
@@ -314,7 +327,7 @@
             emptyCountEl.innerText = unfilledCount;
 
             if (unfilledCount > 0) {
-                logEl.style.color = '#9d00ff';
+                logEl.style.color = '#8ba2c4';
                 logEl.innerText = `// STATUS: 仪式推演中。剩余虚空裂隙: ${unfilledCount} //`;
                 return;
             }
@@ -348,7 +361,7 @@
             }
 
             if (hasError) {
-                logEl.style.color = '#ff0055';
+                logEl.style.color = '#e27387'; // 柔和的肉粉红作为错误提示，避免刺眼大红
                 logEl.innerText = "// STATUS: 逆向因果崩溃。阵列中存在互斥的刻印。";
             } else {
                 logEl.style.color = '#00ffcc';

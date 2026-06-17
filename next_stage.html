@@ -12,61 +12,73 @@
     </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Hiragino Mincho ProN", "MS Mincho", "Courier New", serif; -webkit-user-select: none; user-select: none; }
-        body, html { width: 100%; height: 100%; background-color: #05020a; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        body, html { width: 100%; height: 100%; background-color: #0b0d13; overflow: hidden; display: flex; justify-content: center; align-items: center; }
         
         .game-container {
             position: relative; width: 100%; height: 100%; max-width: 800px; max-height: 600px;
-            background: #080312; border: 1px solid rgba(255, 0, 85, 0.15);
-            overflow: hidden; box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+            background: #10141d; border: 1px solid rgba(176, 196, 222, 0.2);
+            overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
             display: flex; flex-direction: column; justify-content: flex-end; padding: 20px;
+        }
+
+        /* 🖼️ 新增：CG/插画容器，位于对话框上方，完美呈现男女主互动场景 */
+        .cg-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 70%;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 2; overflow: hidden; pointer-events: none;
+        }
+        .cg-container img {
+            width: 100%; height: 100%; object-fit: cover;
+            opacity: 0.85; transition: all 1.2s ease;
+            filter: brightness(0.7) contrast(1.1);
         }
 
         .bg-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 50% 50%, rgba(20, 10, 35, 0.4) 0%, rgba(5, 2, 10, 0.95) 100%);
+            background: radial-gradient(circle at 50% 50%, rgba(16, 20, 29, 0.3) 0%, rgba(11, 13, 19, 0.95) 100%);
             z-index: 1; transition: all 1.5s ease;
         }
-        .bg-overlay.shock { background: radial-gradient(circle, rgba(150, 0, 40, 0.5) 0%, rgba(5, 2, 10, 0.98) 100%); }
-        .bg-overlay.hokkaido { background: radial-gradient(circle, rgba(0, 100, 150, 0.2) 0%, rgba(3, 1, 8, 0.98) 100%); }
+        .bg-overlay.shock { background: radial-gradient(circle, rgba(150, 30, 60, 0.4) 0%, rgba(11, 13, 19, 0.98) 100%); }
+        .bg-overlay.hokkaido { background: radial-gradient(circle, rgba(70, 130, 180, 0.25) 0%, rgba(11, 13, 19, 0.98) 100%); }
 
         .text-box {
-            position: relative; width: 100%; min-height: 160px;
-            background: rgba(10, 5, 18, 0.85); border: 1px solid rgba(255, 0, 85, 0.3);
+            position: relative; width: 100%; min-height: 150px;
+            background: rgba(20, 25, 35, 0.9); border: 1px solid rgba(139, 162, 196, 0.3);
             border-radius: 6px; padding: 20px 25px; z-index: 5; cursor: pointer;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(255, 0, 85, 0.05);
-            transition: border-color 0.5s;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+            transition: border-color 0.4s;
         }
-        .text-box:hover { border-color: rgba(255, 0, 85, 0.6); }
+        .text-box:hover { border-color: rgba(100, 149, 237, 0.6); }
 
         .speaker-name {
-            color: #ff0055; font-size: 0.95rem; font-weight: bold; margin-bottom: 10px;
-            letter-spacing: 2px; text-shadow: 0 0 5px rgba(255, 0, 85, 0.5);
+            color: #6495ed; font-size: 0.95rem; font-weight: bold; margin-bottom: 10px;
+            letter-spacing: 2px; text-shadow: 0 0 5px rgba(100, 149, 237, 0.4);
         }
 
         .dialogue-text {
-            color: rgba(240, 230, 250, 0.9); font-size: 0.95rem; line-height: 1.8;
+            color: rgba(230, 235, 245, 0.95); font-size: 0.95rem; line-height: 1.8;
             letter-spacing: 1.5px; min-height: 60px;
         }
 
         .next-indicator {
-            position: absolute; bottom: 12px; right: 20px; color: #ff0055;
+            position: absolute; bottom: 12px; right: 20px; color: #6495ed;
             font-size: 0.8rem; animation: pulse 1.2s infinite; display: none;
         }
 
         .options-container {
-            position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
             width: 85%; display: flex; flex-direction: column; gap: 14px; z-index: 10;
             display: none;
         }
         .option-btn {
-            background: rgba(13, 5, 23, 0.92); border: 1px solid rgba(157, 0, 255, 0.4);
-            color: rgba(220, 210, 240, 0.9); padding: 14px 20px; font-size: 0.85rem;
+            background: rgba(20, 26, 38, 0.95); border: 1px solid rgba(100, 149, 237, 0.4);
+            color: rgba(220, 225, 235, 0.9); padding: 14px 20px; font-size: 0.85rem;
             border-radius: 4px; cursor: pointer; text-align: center; letter-spacing: 1px;
-            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
         .option-btn:hover {
-            border-color: #ff0055; color: #fff; background: rgba(255, 0, 85, 0.15);
-            box-shadow: 0 0 15px rgba(255, 0, 85, 0.3); transform: scale(1.02);
+            border-color: #6495ed; color: #fff; background: rgba(100, 149, 237, 0.15);
+            box-shadow: 0 0 15px rgba(100, 149, 237, 0.3); transform: scale(1.02);
         }
 
         @keyframes pulse {
@@ -79,6 +91,11 @@
 
     <div class="game-container">
         <div class="bg-overlay" id="bgOverlay"></div>
+        
+        <div class="cg-container" id="cgContainer">
+            <img id="gameCg" src="http://googleusercontent.com/image_collection/image_retrieval/11902399727252945537_1" alt="Destiny Couple CG">
+        </div>
+
         <div class="options-container" id="optionsContainer"></div>
 
         <div class="text-box" id="textBox">
@@ -97,7 +114,7 @@
             { type: "text", speaker: "她", text: "「阿树……」" },
             { type: "text", speaker: "她", text: "声音轻得像是一片羽毛落在积水的街道上——「今晚月色真美。」" },
             { type: "text", speaker: "阿树", text: "这是她每个月的十五号必说的话。我们住在东京郊外一栋老旧的木造公寓里，二楼的卧室里有一扇朝西的窗户。" },
-            { type: "text", speaker: "阿树", text: "每当满月升起，银色的光就会洒在她的侧脸上，勾勒出她鼻梁柔和的弧度。她在那里织毛衣，毛线球滚落在地板上，发出沉闷的声响。" },
+            { type: "text", speaker: "阿树", text: "每当满月升起，银色的光就会洒在她的侧脸上，勾勒出她鼻梁柔和的弧度。我们在那里，静静享受只有彼此的瞬间。" },
             { type: "text", speaker: "阿树", text: "我们相爱了三年。" },
             { type: "text", speaker: "阿树", text: "在这三年里，我们经历过失业、重病、突如其来的搬家，以及无数个沉默的黄昏。" },
             { type: "text", speaker: "阿树", text: "我记得那个夏天，我们在京都的岚山竹林里迷路，汗水浸透了衬衫，她回头看我时，眼神清澈得像一潭深井。那时我以为，这就是永恒。" },
@@ -168,7 +185,7 @@
             { type: "text", speaker: "她", text: "「阿树，你看，这里没有别人。」" },
             { type: "text", speaker: "阿树", text: "我点头，握住她的手。那一刻，我感到一种前所未有的自由。我们不再是社会意义上的兄妹，不再是恋人，我们是两个孤独的原子，融合了。" },
             { type: "text", speaker: "她", text: "「有时候我觉得，我不是在寻找哥哥，而是在寻找另一个自己。」" },
-            { type: "text", speaker: "阿树", text: "「我也是。在遇见你之前，我只是一个人在雨中行走的幽灵。」" },
+            { type: "text", speaker: "阿树", text: "「编制羁绊的网，原来只是为了把自己困在最深的梦里。」" },
             { type: "text", speaker: "阿树", text: "如今，我们住在那座灯塔下。日子平静而缓慢，像蜗牛爬过石板路。偶尔有船经过，带来远方的消息。但我们不在乎。" },
             { type: "text", speaker: "阿树", text: "有时候，在深夜，我会醒来，听着她的呼吸声。我会想起镰仓的海，想起那个旧海螺，想起那张泛黄的照片。我会感到一丝悲伤，但更多是安宁。" },
             { type: "text", speaker: "阿树", text: "毕竟，在这个广阔而冷漠的世界里，至少还有一个人，能听懂你的沉默，能看见你眼角的痣，能和你共享同一片月光。这就是我们要的全部了。" },
@@ -205,6 +222,7 @@
         let typingTimer = null;
 
         const bgOverlay = document.getElementById('bgOverlay');
+        const cgImg = document.getElementById('gameCg');
         const textBox = document.getElementById('textBox');
         const speakerName = document.getElementById('speakerName');
         const dialogueText = document.getElementById('dialogueText');
@@ -236,8 +254,19 @@
 
             const currentStep = script[currentIdx];
 
+            // 根据不同的剧情状态调节CG图片的滤镜和表现形式
             if (currentStep.effect) {
                 bgOverlay.className = "bg-overlay " + currentStep.effect;
+                if (currentStep.effect === "shock") {
+                    cgImg.style.filter = "brightness(0.4) contrast(1.4) saturate(0.8)";
+                } else if (currentStep.effect === "hokkaido") {
+                    cgImg.style.filter = "brightness(0.6) contrast(1.0) saturate(0.9)";
+                }
+            }
+
+            // 特殊结局时让插画淡出，营造离别与消逝感
+            if (currentIdx === 43 || currentIdx === 46 || currentIdx === 53 || currentIdx === 56) {
+                cgImg.style.opacity = "0.15";
             }
 
             if (currentStep.type === "text") {
@@ -245,11 +274,11 @@
                 dialogueText.innerHTML = "";
                 
                 if (currentStep.speaker === "系统") {
-                    speakerName.style.color = "#9d00ff";
-                    speakerName.style.textShadow = "0 0 5px #9d00ff";
+                    speakerName.style.color = "#8a2be2";
+                    speakerName.style.textShadow = "0 0 5px rgba(138, 43, 226, 0.5)";
                 } else {
-                    speakerName.style.color = "#ff0055";
-                    speakerName.style.textShadow = "0 0 5px rgba(255, 0, 85, 0.5)";
+                    speakerName.style.color = "#6495ed";
+                    speakerName.style.textShadow = "0 0 5px rgba(100, 149, 237, 0.4)";
                 }
 
                 typeWriter(currentStep.text, 0);
