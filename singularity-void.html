@@ -2,10 +2,9 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
     <title>Magical Girl World - Singularity Void</title>
     <script>
-        // 【看守机制】读取钥匙
         const currentKey = sessionStorage.getItem('gate_key');
         if (currentKey !== 'stage_secret_void') {
             alert('虚空を覗く資格がありません。 / Unauthorized.');
@@ -13,76 +12,33 @@
         }
     </script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: "Courier New", monospace; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: "Courier New", monospace; touch-action: none; }
         
-        canvas {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
-            filter: opacity(0.22) blur(0.5px);
-        }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; filter: opacity(0.25); }
 
         .container { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
             display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
+            pointer-events: none; 
         }
 
-        .void-message { 
-            text-align: center; font-size: 1.3rem; line-height: 2.2; letter-spacing: 3px; color: #ff0055;
-            text-shadow: 0 0 10px #ff0055, 0 0 20px rgba(255, 0, 85, 0.5); 
-            animation: glitch 1.5s infinite alternate ease-in-out; 
-            user-select: none;
-        }
+        .void-message { text-align: center; font-size: 1.2rem; line-height: 2.2; letter-spacing: 3px; color: #ff0055; text-shadow: 0 0 10px #ff0055; animation: glitch 1.5s infinite alternate ease-in-out; }
+        .sub-message { margin-top: 15px; color: #00ffff; text-shadow: 0 0 10px #00ffff; font-size: 0.9rem; }
+        .stay-tuned { margin-top: 25px; font-size: 1.1rem; font-weight: bold; color: #ffffff; letter-spacing: 6px; text-shadow: 0 0 8px #00ffff; }
 
-        .sub-message {
-            margin-top: 15px; color: #00ffff; text-shadow: 0 0 10px #00ffff; font-size: 1rem;
-            animation: breathe 3s infinite alternate ease-in-out;
-        }
-
-        .stay-tuned {
-            margin-top: 30px; font-size: 1.2rem; font-weight: bold; color: #ffffff; letter-spacing: 6px;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 0 0 20px #00ffff;
-            animation: glitch-blue 2s infinite ease-in-out;
-        }
-
-        /* ==========================================
-           🌊 自动浮现的因果气泡（充斥圣经、炼金术与魔法混淆线索）
-           ========================================== */
         .log-terminal {
-            margin-top: 40px;
-            width: 100%; max-width: 620px; height: 0;
-            opacity: 0;
-            background: rgba(3, 8, 15, 0.88);
-            border: 1px solid rgba(0, 255, 255, 0);
-            border-radius: 6px; padding: 0 12px;
-            font-family: 'Courier New', 'MS Mincho', monospace;
-            text-align: left; overflow: hidden;
-            box-shadow: inset 0 0 20px rgba(0, 255, 255, 0), 0 0 30px rgba(0,0,0,0.95);
+            margin-top: 35px; width: 100%; max-width: 600px; height: 0; opacity: 0;
+            background: rgba(3, 8, 15, 0.92); border: 1px solid rgba(0, 255, 255, 0);
+            border-radius: 6px; padding: 0 12px; font-family: 'Courier New', 'MS Mincho', monospace;
             transition: height 2.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 2s ease-out, border-color 2.5s ease;
         }
+        .log-terminal.surfaced { height: 190px; opacity: 1; padding: 12px; border: 1px solid rgba(0, 255, 255, 0.15); }
+        .system-status { color: #00ffff; font-size: 0.75rem; border-bottom: 1px dashed rgba(0, 255, 255, 0.15); padding-bottom: 6px; margin-bottom: 8px; }
+        .log-stream { height: 135px; overflow-y: hidden; display: flex; flex-direction: column; gap: 6px; }
+        .log-line { font-size: 0.7rem; line-height: 1.5; color: rgba(0, 210, 255, 0.45); letter-spacing: 1px; }
 
-        .log-terminal.surfaced {
-            height: 200px; opacity: 1; padding: 12px;
-            border: 1px solid rgba(0, 255, 255, 0.25);
-            box-shadow: inset 0 0 15px rgba(0, 255, 255, 0.1), 0 0 35px rgba(255, 0, 85, 0.05);
-        }
-
-        .system-status {
-            color: #00ffff; font-size: 0.8rem; font-weight: bold;
-            border-bottom: 1px dashed rgba(0, 255, 255, 0.2);
-            padding-bottom: 6px; margin-bottom: 8px;
-            letter-spacing: 1px;
-        }
-
-        .log-stream { height: 145px; overflow-y: hidden; display: flex; flex-direction: column; gap: 6px; }
-        .log-line { font-size: 0.72rem; line-height: 1.5; color: rgba(0, 210, 255, 0.55); letter-spacing: 1px; }
-        .log-line span.tag { color: #8a2be2; } /* 神秘学日志标签用紫色 */
-        
-        /* 渗集数字的高亮极其隐晦：不再有红背景，只有淡淡的白金荧光，伪装在神棍文本中 */
-        .log-line span.mystery-num {
-            color: #fff; font-weight: bold;
-            text-shadow: 0 0 4px #ffe89e, 0 0 8px rgba(255,255,255,0.8);
-            padding: 0 2px;
-        }
+        @keyframes glitch { 0%, 90%, 100% { transform: skewX(0deg); } 93% { transform: skewX(3deg); } 95% { transform: skewX(-1deg); } }
     </style>
 </head>
 <body>
@@ -93,19 +49,12 @@
         <div class="void-message">
             「 特異点の虚空へようこそ。 」<br>
             Welcome to the Singularity Void.<br>
-            <div class="sub-message">
-                [ ここが真の裏世界。因果の海がすべてを洗流す。 ]
-            </div>
-            <div class="stay-tuned">
-                「 乞うご期待。 」<br>
-                Stay Tuned.
-            </div>
+            <div class="sub-message">[ 因果の海がすべてを洗流す。 ]</div>
+            <div class="stay-tuned">「 乞うご期待。 」</div>
         </div>
 
         <div class="log-terminal" id="logTerminal">
-            <div class="system-status">
-                [ETHER_NET]: OCCULT_RESONANCE // 正在解析因果深海中沉淀的意识残渣...
-            </div>
+            <div class="system-status">[ETHER_NET]: OCCULT_RESONANCE // 正在检索沉淀的意识残渣...</div>
             <div class="log-stream" id="logStream"></div>
         </div>
     </div>
@@ -113,12 +62,10 @@
     <audio id="voidBgm" src="./bgm4.mp3" loop></audio>
 
     <script>
-        // 1. 音频控制
         const audio = document.getElementById('voidBgm');
         function tryMusic() { audio.play().then(() => document.removeEventListener('click', tryMusic)).catch(err => {}); }
         tryMusic(); document.addEventListener('click', tryMusic);
 
-        // 2. 4秒后气泡自动从深海浮现
         const logTerminal = document.getElementById('logTerminal');
         setTimeout(() => {
             logTerminal.classList.add('surfaced');
@@ -126,98 +73,181 @@
         }, 4000); 
 
         // ==========================================
-        // 🧩 3. 混合神学、炼金术与魔法因果的数据库
+        // 🧩 1. 虚空日志流
         // ==========================================
-        // 正确密码修改为：421
         const database = [
-            "「SYS_ECHO: 翠玉录(Tabula Smaragdina) 协议已载入。如其在上，如其在下。」",
-            "「揭开羔羊的封印，见有<span class='mystery-num'>4</span>匹马自虚空跃出，其色为主宰者的审判。 // ARTIFACT_ALPHA」", // 线索 4
-            "「yip是谁？为什么因果回路里到处都在强行借调这个代号……」",
-            "「炼金术之秘：唯有借由双生（极性<span class='mystery-num'>2</span>）的对立重组，真汞方能化为贤者之石。 // ARTIFACT_BETA」", // 线索 2
-            "「原来，命中注定的人，从一开始就不存在啊。」",
-            "「ERROR: 魔法回路产生严重排异。第13个因果观测点已经处于溃灭边缘。」",
-            "「万物归于太一（The <span class='mystery-num'>1</span>）。始源即是终点，虚空将在唯一的凝视中收缩。 // ARTIFACT_OMEGA」", // 线索 1
-            "「不要在此寻找凡尘的键位。直接将打捞出的三大遗物坐标共鸣敲击，封印即解。」",
-            "「循环了1402次，根本没有第五页，迷失在此的人，请放弃挣扎吧。」"
+            "SYS_ECHO: 翠玉录协议已载入。如其在上，如其在下。",
+            "揭开羔羊的封印，见有4匹马自虚空跃出，其色为主宰者的审判。 // MATRIX_FACTOR_4",
+            "yip是谁？为什么因果回路里到处都在强行借调这个代号……",
+            "炼金术之秘：唯有借由双生（极性2）的对立重组，方能炼成贤者之石。 // MATRIX_FACTOR_2",
+            "原来，命中注定的人，从一开始就不存在啊。",
+            "ERROR: 魔法回路产生严重排异。第13个因果观测点处于溃灭边缘。",
+            "万物归于太一（The 1）。始源即是终点，虚空将在唯一的凝视中收缩。 // MATRIX_FACTOR_1",
+            "不要在此寻找凡尘的输入框。依循隐现的九宫矩阵，一笔划下解开维度的因果线。",
+            "循环了1402次，根本没有第五页，迷失在此的人，请放弃挣扎吧。"
         ];
 
         const logStream = document.getElementById('logStream');
-        let logIndex = 0;
-
         function appendLog() {
             if (!logTerminal.classList.contains('surfaced')) return;
-            
-            const text = database[logIndex % database.length];
-            logIndex++;
-
+            const text = database[Math.floor(Math.random() * database.length)];
             const line = document.createElement('div');
             line.className = 'log-line';
-            
             const h = String(Math.floor(Math.random() * 24)).padStart(2, '0');
             const m = String(Math.floor(Math.random() * 60)).padStart(2, '0');
             const s = String(Math.floor(Math.random() * 60)).padStart(2, '0');
-            
-            // 随机分配黑客或神秘学标签
-            const tag = Math.random() > 0.5 ? "<span class='tag'>[APOCALYPSE]</span> " : "<span>[KERNEL]</span> ";
-
-            line.innerHTML = `${tag}${h}:${m}:${s} // ${text}`;
+            line.innerHTML = `[KERNEL] ${h}:${m}:${s} // ${text}`;
             logStream.appendChild(line);
-
-            if (logStream.childNodes.length > 6) { logStream.removeChild(logStream.firstChild); }
+            if (logStream.childNodes.length > 5) { logStream.removeChild(logStream.firstChild); }
             logStream.scrollTop = logStream.scrollHeight;
-
-            setTimeout(appendLog, 3000); // 每3秒刷新一条
+            setTimeout(appendLog, Math.random() * 2500 + 2000);
         }
 
         // ==========================================
-        // ⌨️ 4. 盲敲监听核心：玩家输入 421 跳转数独页面
-        // ==========================================
-        let inputBuffer = "";
-        const targetSecret = "421"; // 新的因果代号
-
-        document.addEventListener('keydown', (e) => {
-            if (/[0-9]/.test(e.key)) {
-                inputBuffer += e.key;
-                if (inputBuffer.length > targetSecret.length) {
-                    inputBuffer = inputBuffer.substring(inputBuffer.length - targetSecret.length);
-                }
-                
-                if (inputBuffer === targetSecret) {
-                    sessionStorage.setItem('gate_key', 'sudoku_trial');
-                    window.location.href = 'sudoku.html';
-                }
-            }
-        });
-
-        // ==========================================
-        // 🌌 5. Canvas 代码雨
+        // 🌌 2. Canvas 核心控制：代码雨 + 呼吸九宫格 + 滑行拦截
         // ==========================================
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        function resizeCanvas() {
-            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-            columns = canvas.width / fontSize;
-            for (let x = 0; x < columns; x++) { if(rainDrops[x] === undefined) rainDrops[x] = 1; }
-        }
         const katakana = "ΞΔΦΨΩ0123456789†‡☠★🔮★☠‡†".split("");
         const fontSize = 16;
-        let columns = window.innerWidth / fontSize;
-        const rainDrops = [];
-        for (let x = 0; x < columns; x++) { rainDrops[x] = Math.random() * -100; }
+        let columns = 0; let rainDrops = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            columns = Math.floor(canvas.width / fontSize);
+            for (let x = 0; x < columns; x++) { if(rainDrops[x] === undefined) rainDrops[x] = Math.random() * -50; }
+        }
         window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
-        function drawMatrix() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.06)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#ff0055'; ctx.font = fontSize + 'px monospace';
-            for (let i = 0; i < rainDrops.length; i++) {
-                const text = katakana[Math.floor(Math.random() * katakana.length)];
-                const x = i * fontSize; const y = rainDrops[i] * fontSize;
-                ctx.fillText(text, x, y);
-                if (y > canvas.height && Math.random() > 0.975) { rainDrops[i] = 0; }
-                rainDrops[i]++;
+        // 3秒周期的呼吸网格逻辑
+        let gridAlpha = 0;
+        let gridTimer = 0;
+
+        // 滑行轨迹捕获变量
+        let isDrawing = false;
+        let userPath = []; // 存储滑过的小键盘数字序列，例如 [4, 2, 1]
+        let lastGridNum = null;
+        let currentMousePos = { x: 0, y: 0 };
+
+        // 计算当前触点属于九宫格的哪一个数字 (标准小键盘布局)
+        function getGridNumber(x, y) {
+            const w = canvas.width / 3;
+            const h = canvas.height / 3;
+            const col = Math.floor(x / w); // 0, 1, 2
+            const row = Math.floor(y / h); // 0, 1, 2
+            
+            // 映射到数字小键盘
+            // 行0 (上方): 7, 8, 9
+            // 行1 (中央): 4, 5, 6
+            // 行2 (下方): 1, 2, 3
+            if (row === 0) return [7, 8, 9][col];
+            if (row === 1) return [4, 5, 6][col];
+            if (row === 2) return [1, 2, 3][col];
+            return null;
+        }
+
+        // 滑动事件开始
+        function startTrack(x, y) {
+            if (sessionStorage.getItem('gate_key') === 'sudoku_trial') return;
+            isDrawing = true;
+            userPath = [];
+            lastGridNum = getGridNumber(x, y);
+            if (lastGridNum) userPath.push(lastGridNum);
+            currentMousePos = { x, y };
+        }
+
+        // 滑动中进行碰撞检测
+        function moveTrack(x, y) {
+            if (!isDrawing) return;
+            currentMousePos = { x, y };
+            const currentNum = getGridNumber(x, y);
+            
+            // 如果滑入了新的格子，且跟上一个格子不同
+            if (currentNum && currentNum !== lastGridNum) {
+                lastGridNum = currentNum;
+                // 只有当这个数字没有在当前连续滑行中被记录过，才塞入队列
+                if (userPath[userPath.length - 1] !== currentNum) {
+                    userPath.push(currentNum);
+                }
             }
         }
-        setInterval(drawMatrix, 30);
+
+        // 滑动结束判定因果密码
+        function endTrack() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            
+            // 过滤重复和无效滑动后，检查最后阶段是否形成了完美的 [4, 2, 1] 轨迹
+            // 允许滑过其他多余数字，但最后核心必须精准包含或匹配 4->2->1 的顺序
+            const pathStr = userPath.join('');
+            if (pathStr.includes('421')) {
+                // 彻底激活！通往数独
+                sessionStorage.setItem('gate_key', 'sudoku_trial');
+                window.location.href = 'sudoku.html';
+            }
+            userPath = [];
+        }
+
+        // 绑定触屏与鼠标
+        window.addEventListener('mousedown', (e) => startTrack(e.clientX, e.clientY));
+        window.addEventListener('mousemove', (e) => moveTrack(e.clientX, e.clientY));
+        window.addEventListener('mouseup', endTrack);
+
+        window.addEventListener('touchstart', (e) => { const t = e.touches[0]; startTrack(t.clientX, t.clientY); });
+        window.addEventListener('touchmove', (e) => { const t = e.touches[0]; moveTrack(t.clientX, t.clientY); });
+        window.addEventListener('touchend', endTrack);
+
+        // ==========================================
+        // 🌊 3. 混合主渲染循环
+        // ==========================================
+        function loop() {
+            // 背景淡化半透明，留住代码雨拖尾
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.08)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // A. 绘制经典红黑代码雨
+            ctx.fillStyle = '#ff0055'; ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < columns; i++) {
+                const text = katakana[Math.floor(Math.random() * katakana.length)];
+                ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+                if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) { rainDrops[i] = 0; }
+                rainDrops[i]++;
+            }
+
+            // B. 3秒周期的因果九宫格暗纹缓缓浮现、隐去
+            gridTimer += 0.02;
+            // 使用正弦函数让它每3秒呼吸一次（从完全透明到微弱幽蓝）
+            gridAlpha = Math.max(0, Math.sin(gridTimer) * 0.08); 
+
+            const w = canvas.width / 3;
+            const h = canvas.height / 3;
+
+            ctx.strokeStyle = `rgba(0, 255, 255, ${gridAlpha})`;
+            ctx.lineWidth = 1;
+            
+            // 画两纵两横的划线
+            ctx.beginPath();
+            ctx.moveTo(w, 0); ctx.lineTo(w, canvas.height);
+            ctx.moveTo(w * 2, 0); ctx.lineTo(w * 2, canvas.height);
+            ctx.moveTo(0, h); ctx.lineTo(canvas.width, h);
+            ctx.moveTo(0, h * 2); ctx.lineTo(canvas.width, h * 2);
+            ctx.stroke();
+
+            // C. 如果玩家正在滑动，实时绘制他拖出的幽蓝色轨迹光束
+            if (isDrawing && userPath.length > 0) {
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.6)';
+                ctx.lineWidth = 3;
+                ctx.shadowBlur = 10; ctx.shadowColor = '#00ffff';
+                ctx.beginPath();
+                
+                // 可以在这里加特效，让被滑过的小九宫格中心亮起微光
+                ctx.arc(currentMousePos.x, currentMousePos.y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#00ffff'; ctx.fill();
+            }
+            ctx.shadowBlur = 0; // 重置光晕
+            
+            requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
     </script>
 </body>
 </html>
